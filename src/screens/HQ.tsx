@@ -11,6 +11,7 @@ import { COMPONENT_REPLACEMENT_COSTS } from '../engine/seasonEngine'
 import { PixelButton } from '../components/PixelButton'
 import { BroadcastTimingTower, type TimingEntry } from '../components/BroadcastTimingTower'
 import { TrackMiniMap } from '../components/TrackMiniMap'
+import { TeamLogo } from '../components/TeamLogo'
 import { formatMoney } from '../utils/formatMoney'
 import type { RDArea, RDBranch, ComponentType, SponsorObjective } from '../data/types'
 
@@ -96,7 +97,7 @@ export function HQ() {
         <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
           {/* Left: Team badge + name + engine */}
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: teamColor }} />
+            <TeamLogo teamId={selectedTeamId ?? ''} size="md" />
             <div className="min-w-0">
               <span className="font-pixel text-[10px] text-f1-text truncate block">
                 {team?.name ?? 'Unknown'}
