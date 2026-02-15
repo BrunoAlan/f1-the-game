@@ -1,4 +1,5 @@
 import { tireSpecs, tireColors } from '../data/tires'
+import { TireCompoundIcon } from './TireCompoundIcon'
 import type { TireCompound } from '../data/types'
 
 const ALL_DRY_COMPOUNDS: TireCompound[] = ['soft', 'medium', 'hard']
@@ -10,7 +11,7 @@ interface DegradationChartProps {
 
 export function DegradationChart({ revealedCompounds }: DegradationChartProps) {
   return (
-    <div className="bg-slate-800 border-2 border-f1-border rounded-sm p-4">
+    <div className="bg-f1-surface border border-f1-border rounded-sm p-4">
       <h2 className="font-pixel text-[11px] text-f1-accent mb-4">TIRE DATA</h2>
 
       <div className="flex flex-col gap-3">
@@ -23,10 +24,16 @@ export function DegradationChart({ revealedCompounds }: DegradationChartProps) {
           if (!isRevealed) {
             return (
               <div key={compound} className="flex items-center gap-3">
-                <span className="font-pixel text-[9px] text-f1-text/30 w-16 uppercase shrink-0">
-                  {compound}
-                </span>
-                <div className="flex-1 h-5 bg-slate-900 border border-f1-border/40 rounded-sm flex items-center justify-center">
+                <div className="flex items-center gap-1.5 w-20 shrink-0">
+                  <TireCompoundIcon compound={compound} size="sm" />
+                  <span className="font-pixel text-[9px] text-f1-text/30 uppercase">
+                    {compound}
+                  </span>
+                </div>
+                <div
+                  className="flex-1 h-5 border border-f1-border rounded-sm flex items-center justify-center"
+                  style={{ backgroundColor: '#2a2a38' }}
+                >
                   <span className="font-pixel text-[8px] text-f1-text/30">LOCKED</span>
                 </div>
                 <span className="font-pixel text-[8px] text-f1-text/20 w-20 text-right shrink-0">
@@ -38,10 +45,16 @@ export function DegradationChart({ revealedCompounds }: DegradationChartProps) {
 
           return (
             <div key={compound} className="flex items-center gap-3">
-              <span className="font-pixel text-[9px] w-16 uppercase shrink-0" style={{ color }}>
-                {compound}
-              </span>
-              <div className="flex-1 h-5 bg-slate-900 border border-f1-border/40 rounded-sm overflow-hidden">
+              <div className="flex items-center gap-1.5 w-20 shrink-0">
+                <TireCompoundIcon compound={compound} size="sm" />
+                <span className="font-pixel text-[9px] uppercase" style={{ color }}>
+                  {compound}
+                </span>
+              </div>
+              <div
+                className="flex-1 h-5 border border-f1-border rounded-sm overflow-hidden"
+                style={{ backgroundColor: '#2a2a38' }}
+              >
                 <div
                   className="h-full rounded-sm transition-all duration-500"
                   style={{
