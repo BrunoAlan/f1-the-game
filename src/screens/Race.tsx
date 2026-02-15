@@ -31,7 +31,8 @@ import {
   getModifiedTeamStats,
 } from '../engine/seasonEngine'
 
-const PIT_COMPOUNDS: TireCompound[] = ['soft', 'medium', 'hard']
+const DRY_COMPOUNDS: TireCompound[] = ['soft', 'medium', 'hard']
+const RAIN_COMPOUNDS: TireCompound[] = ['soft', 'medium', 'hard', 'intermediate', 'wet']
 
 export function Race() {
   const { qualifyingGrid, selectedDriverId, weather } = useWeekendStore()
@@ -770,7 +771,10 @@ export function Race() {
                     exit={{ opacity: 0, y: 10 }}
                     className="absolute bottom-full right-0 mb-2 bg-f1-surface border border-f1-border rounded-sm p-2 flex gap-2 z-40"
                   >
-                    {PIT_COMPOUNDS.map((compound) => (
+                    {(raceState.weather === 'light-rain' || raceState.weather === 'heavy-rain'
+                      ? RAIN_COMPOUNDS
+                      : DRY_COMPOUNDS
+                    ).map((compound) => (
                       <button
                         key={compound}
                         onClick={() => handlePitStop(compound)}
