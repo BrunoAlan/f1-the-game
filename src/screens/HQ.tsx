@@ -9,17 +9,12 @@ import { teams } from '../data/teams'
 import { drivers } from '../data/drivers'
 import { COMPONENT_REPLACEMENT_COSTS } from '../engine/seasonEngine'
 import { PixelButton } from '../components/PixelButton'
+import { formatMoney } from '../utils/formatMoney'
 import type { RDArea, RDBranch, ComponentType, SponsorObjective } from '../data/types'
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function formatMoney(amount: number): string {
-  if (amount >= 1_000_000) return `$${(amount / 1_000_000).toFixed(1)}M`
-  if (amount >= 1_000) return `$${Math.round(amount / 1_000)}K`
-  return `$${amount}`
-}
 
 function formatObjective(objective: SponsorObjective): string {
   switch (objective.type) {
@@ -82,13 +77,14 @@ export function HQ() {
     <div className="min-h-screen bg-f1-bg px-4 py-6 flex flex-col items-center">
       {/* Header */}
       <div className="w-full max-w-2xl mb-4">
-        <h1 className="font-pixel text-lg text-f1-accent mb-1">
-          HQ — RACE {race.round}/24
-        </h1>
+        <h1 className="font-pixel text-lg text-f1-accent mb-1">HQ — RACE {race.round}/24</h1>
         <p className="font-pixel text-[10px] text-f1-text/70 mb-2">{race.gpName}</p>
         <div className="flex gap-4">
           <span className="font-pixel text-[10px] text-f1-text">
-            Budget: <span className="text-f1-success">{formatMoney(budget)}</span>
+            Budget:{' '}
+            <span className={budget < 0 ? 'text-f1-danger' : 'text-f1-success'}>
+              {formatMoney(budget)}
+            </span>
           </span>
           <span className="font-pixel text-[10px] text-f1-text">
             RP: <span className="text-f1-accent">{researchPoints}</span>
@@ -161,9 +157,7 @@ function RDTab() {
         const branchSelected = upgrade.branch
 
         const canAffordBase =
-          !baseUnlocked &&
-          budget >= baseNode.costMoney &&
-          researchPoints >= baseNode.costRP
+          !baseUnlocked && budget >= baseNode.costMoney && researchPoints >= baseNode.costRP
 
         const canAffordBranchA =
           baseUnlocked &&
@@ -179,9 +173,7 @@ function RDTab() {
 
         return (
           <div key={area} className="border border-f1-border rounded-sm p-3">
-            <h3 className="font-pixel text-[11px] text-f1-accent mb-3">
-              {RD_AREA_LABELS[area]}
-            </h3>
+            <h3 className="font-pixel text-[11px] text-f1-accent mb-3">{RD_AREA_LABELS[area]}</h3>
 
             {/* Base upgrade */}
             <div
@@ -194,16 +186,12 @@ function RDTab() {
               }`}
             >
               <div className="flex items-center justify-between mb-1">
-                <span className="font-pixel text-[10px] text-f1-text">
-                  {baseNode.name}
-                </span>
+                <span className="font-pixel text-[10px] text-f1-text">{baseNode.name}</span>
                 {baseUnlocked && (
                   <span className="font-pixel text-[9px] text-f1-success">UNLOCKED</span>
                 )}
               </div>
-              <p className="font-pixel text-[9px] text-f1-text/50 mb-2">
-                {baseNode.description}
-              </p>
+              <p className="font-pixel text-[9px] text-f1-text/50 mb-2">{baseNode.description}</p>
               {!baseUnlocked && (
                 <div className="flex items-center justify-between">
                   <span className="font-pixel text-[9px] text-f1-text/40">
@@ -222,10 +210,10 @@ function RDTab() {
 
             {/* Branch options */}
             <div className="grid grid-cols-2 gap-2">
-              {([
+              {[
                 { node: branchA, branch: 'a' as RDBranch, canAfford: canAffordBranchA },
                 { node: branchB, branch: 'b' as RDBranch, canAfford: canAffordBranchB },
-              ]).map(({ node, branch, canAfford }) => {
+              ].map(({ node, branch, canAfford }) => {
                 const isSelected = branchSelected === branch
                 const isOtherSelected = branchSelected !== null && branchSelected !== branch
                 const isLocked = !baseUnlocked
@@ -246,9 +234,7 @@ function RDTab() {
                     <span className="font-pixel text-[10px] text-f1-text block mb-1">
                       {node.name}
                     </span>
-                    <p className="font-pixel text-[9px] text-f1-text/50 mb-2">
-                      {node.description}
-                    </p>
+                    <p className="font-pixel text-[9px] text-f1-text/50 mb-2">{node.description}</p>
                     {isSelected && (
                       <span className="font-pixel text-[9px] text-f1-success">SELECTED</span>
                     )}
@@ -384,9 +370,7 @@ function SponsorsTab() {
               className="border border-f1-success/30 rounded-sm p-2 flex items-center justify-between"
             >
               <div>
-                <span className="font-pixel text-[10px] text-f1-text block">
-                  {sponsor.name}
-                </span>
+                <span className="font-pixel text-[10px] text-f1-text block">{sponsor.name}</span>
                 <span className="font-pixel text-[9px] text-f1-text/50">
                   {formatObjective(sponsor.objective)}
                 </span>
@@ -424,9 +408,7 @@ function SponsorsTab() {
               className="border border-f1-border rounded-sm p-2 flex items-center justify-between"
             >
               <div>
-                <span className="font-pixel text-[10px] text-f1-text block">
-                  {sponsor.name}
-                </span>
+                <span className="font-pixel text-[10px] text-f1-text block">{sponsor.name}</span>
                 <span className="font-pixel text-[9px] text-f1-text/50">
                   {formatObjective(sponsor.objective)}
                 </span>
@@ -465,9 +447,7 @@ function StandingsTab() {
   const driverStandings = useSeasonStore((s) => s.driverStandings)
   const teamStandings = useSeasonStore((s) => s.teamStandings)
 
-  const playerDriverIds = drivers
-    .filter((d) => d.teamId === selectedTeamId)
-    .map((d) => d.id)
+  const playerDriverIds = drivers.filter((d) => d.teamId === selectedTeamId).map((d) => d.id)
 
   const sortedDrivers = [...driverStandings].sort((a, b) => b.points - a.points)
   const sortedTeams = [...teamStandings].sort((a, b) => b.points - a.points)
@@ -523,9 +503,7 @@ function StandingsTab() {
                   {driver?.shortName ?? '???'}{' '}
                   <span className="text-f1-text/40">#{driver?.number}</span>
                 </span>
-                <span className="font-pixel text-[10px] text-f1-accent">
-                  {ds.points} pts
-                </span>
+                <span className="font-pixel text-[10px] text-f1-accent">{ds.points} pts</span>
               </div>
             )
           })}
@@ -553,9 +531,7 @@ function StandingsTab() {
                 <span className="font-pixel text-[10px] text-f1-text flex-1">
                   {team?.name ?? '???'}
                 </span>
-                <span className="font-pixel text-[10px] text-f1-accent">
-                  {ts.points} pts
-                </span>
+                <span className="font-pixel text-[10px] text-f1-accent">{ts.points} pts</span>
               </div>
             )
           })}
@@ -577,9 +553,7 @@ function NextRaceTab() {
   const track = tracks.find((t) => t.id === race.trackId)
 
   if (!track) {
-    return (
-      <p className="font-pixel text-[10px] text-f1-danger">Track not found for this race.</p>
-    )
+    return <p className="font-pixel text-[10px] text-f1-danger">Track not found for this race.</p>
   }
 
   const handleStart = () => {
@@ -631,9 +605,7 @@ function NextRaceTab() {
         </div>
         <div className="flex items-center justify-between">
           <span className="font-pixel text-[9px] text-f1-text/50">TIRE WEAR</span>
-          <span className="font-pixel text-[10px] text-f1-text">
-            {track.tireWear.toFixed(2)}x
-          </span>
+          <span className="font-pixel text-[10px] text-f1-text">{track.tireWear.toFixed(2)}x</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="font-pixel text-[9px] text-f1-text/50">OVERTAKING</span>
