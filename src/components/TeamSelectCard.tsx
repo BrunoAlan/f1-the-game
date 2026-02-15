@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { TeamColorBadge } from './TeamColorBadge'
+import { TeamLogo } from './TeamLogo'
 import { BroadcastStatBar } from './BroadcastStatBar'
 import type { Team, Driver } from '../data/types'
 
@@ -33,7 +33,7 @@ export function TeamSelectCard({
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
         {/* Zone 1+2: Badge + Team Name */}
         <div className="flex items-center gap-3 sm:min-w-[160px]">
-          <TeamColorBadge abbreviation={team.abbreviation} color={team.primaryColor} />
+          <TeamLogo teamId={team.id} size="lg" />
           <div>
             <div className="font-pixel text-[10px] text-f1-text">{team.name}</div>
             <div className="font-pixel text-[7px] text-f1-text/40 mt-0.5">{team.engine}</div>
