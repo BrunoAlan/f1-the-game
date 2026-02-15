@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import type { WeatherCondition } from '../data/types'
 
 export type Phase =
@@ -34,35 +35,9 @@ interface WeekendState {
   reset: () => void
 }
 
-export const useWeekendStore = create<WeekendState>((set) => ({
-  phase: 'team-select',
-  selectedTeamId: null,
-  selectedDriverId: null,
-  weather: 'dry',
-  practiceData: { dataCollected: 0, revealedCompounds: [] },
-  qualifyingGrid: [],
-  currentTrackId: null,
-  isSprint: false,
-  sprintGrid: [],
-
-  setPhase: (phase) => set({ phase }),
-  selectTeam: (teamId, driverId) => set({ selectedTeamId: teamId, selectedDriverId: driverId }),
-  setPracticeData: (data) => set({ practiceData: data }),
-  setQualifyingGrid: (grid) => set({ qualifyingGrid: grid }),
-  setCurrentTrack: (trackId, isSprint) => set({ currentTrackId: trackId, isSprint }),
-  setSprintGrid: (grid) => set({ sprintGrid: grid }),
-  resetWeekend: () =>
-    set({
-      phase: 'hq',
-      weather: 'dry',
-      practiceData: { dataCollected: 0, revealedCompounds: [] },
-      qualifyingGrid: [],
-      currentTrackId: null,
-      isSprint: false,
-      sprintGrid: [],
-    }),
-  reset: () =>
-    set({
+export const useWeekendStore = create<WeekendState>()(
+  persist(
+    (set) => ({
       phase: 'team-select',
       selectedTeamId: null,
       selectedDriverId: null,
@@ -72,5 +47,36 @@ export const useWeekendStore = create<WeekendState>((set) => ({
       currentTrackId: null,
       isSprint: false,
       sprintGrid: [],
+
+      setPhase: (phase) => set({ phase }),
+      selectTeam: (teamId, driverId) => set({ selectedTeamId: teamId, selectedDriverId: driverId }),
+      setPracticeData: (data) => set({ practiceData: data }),
+      setQualifyingGrid: (grid) => set({ qualifyingGrid: grid }),
+      setCurrentTrack: (trackId, isSprint) => set({ currentTrackId: trackId, isSprint }),
+      setSprintGrid: (grid) => set({ sprintGrid: grid }),
+      resetWeekend: () =>
+        set({
+          phase: 'hq',
+          weather: 'dry',
+          practiceData: { dataCollected: 0, revealedCompounds: [] },
+          qualifyingGrid: [],
+          currentTrackId: null,
+          isSprint: false,
+          sprintGrid: [],
+        }),
+      reset: () =>
+        set({
+          phase: 'team-select',
+          selectedTeamId: null,
+          selectedDriverId: null,
+          weather: 'dry',
+          practiceData: { dataCollected: 0, revealedCompounds: [] },
+          qualifyingGrid: [],
+          currentTrackId: null,
+          isSprint: false,
+          sprintGrid: [],
+        }),
     }),
-}))
+    { name: 'f1-game-weekend' },
+  ),
+)
