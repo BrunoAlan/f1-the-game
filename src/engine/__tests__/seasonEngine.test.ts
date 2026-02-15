@@ -22,6 +22,7 @@ import {
 const makeTeam = (overrides?: Partial<Team>): Team => ({
   id: 'test-team',
   name: 'Test Racing',
+  abbreviation: 'TST',
   engine: 'TestPower',
   primaryColor: '#ff0000',
   accentColor: '#ffffff',
@@ -79,10 +80,10 @@ describe('getModifiedTeamStats', () => {
   it('applies base + branch upgrades correctly', () => {
     const team = makeTeam()
     const upgrades: RDUpgrades = {
-      motor: { base: true, branch: 'a' },       // base +2 topSpeed, branch +3 topSpeed, +0.05 fuel, +0.5 engineWear
-      aero: { base: true, branch: 'b' },         // base +2 cornering, branch +1 cornering +2 topSpeed
-      chasis: { base: true, branch: 'a' },       // base +8 tireLife, branch +15 tireLife -1 cornering
-      pitcrew: { base: true, branch: 'b' },      // base -0.3 pitTime, branch -0.2 pitTime -50 pitError
+      motor: { base: true, branch: 'a' }, // base +2 topSpeed, branch +3 topSpeed, +0.05 fuel, +0.5 engineWear
+      aero: { base: true, branch: 'b' }, // base +2 cornering, branch +1 cornering +2 topSpeed
+      chasis: { base: true, branch: 'a' }, // base +8 tireLife, branch +15 tireLife -1 cornering
+      pitcrew: { base: true, branch: 'b' }, // base -0.3 pitTime, branch -0.2 pitTime -50 pitError
     }
     const stats = getModifiedTeamStats(team, upgrades)
 

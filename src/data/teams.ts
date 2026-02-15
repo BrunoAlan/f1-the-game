@@ -4,6 +4,7 @@ export const teams: Team[] = [
   {
     id: 'red-bull',
     name: 'Red Bull Racing',
+    abbreviation: 'RBR',
     engine: 'Red Bull/Ford',
     primaryColor: '#3671C6',
     accentColor: '#FFD700',
@@ -14,6 +15,7 @@ export const teams: Team[] = [
   {
     id: 'mclaren',
     name: 'McLaren',
+    abbreviation: 'MCL',
     engine: 'Mercedes',
     primaryColor: '#FF8000',
     accentColor: '#0090FF',
@@ -24,6 +26,7 @@ export const teams: Team[] = [
   {
     id: 'mercedes',
     name: 'Mercedes',
+    abbreviation: 'MER',
     engine: 'Mercedes',
     primaryColor: '#27F4D2',
     accentColor: '#222222',
@@ -34,6 +37,7 @@ export const teams: Team[] = [
   {
     id: 'ferrari',
     name: 'Ferrari',
+    abbreviation: 'FER',
     engine: 'Ferrari',
     primaryColor: '#E8002D',
     accentColor: '#FFDD00',
@@ -44,6 +48,7 @@ export const teams: Team[] = [
   {
     id: 'aston-martin',
     name: 'Aston Martin',
+    abbreviation: 'AMR',
     engine: 'Honda',
     primaryColor: '#229971',
     accentColor: '#FFFFFF',
@@ -54,6 +59,7 @@ export const teams: Team[] = [
   {
     id: 'alpine',
     name: 'Alpine',
+    abbreviation: 'ALP',
     engine: 'Mercedes',
     primaryColor: '#0093CC',
     accentColor: '#FF69B4',
@@ -64,6 +70,7 @@ export const teams: Team[] = [
   {
     id: 'audi',
     name: 'Audi',
+    abbreviation: 'AUD',
     engine: 'Audi',
     primaryColor: '#1E1E1E',
     accentColor: '#00E701',
@@ -74,6 +81,7 @@ export const teams: Team[] = [
   {
     id: 'cadillac',
     name: 'Cadillac',
+    abbreviation: 'CAD',
     engine: 'Ferrari',
     primaryColor: '#1C1C1C',
     accentColor: '#D4AF37',
@@ -84,6 +92,7 @@ export const teams: Team[] = [
   {
     id: 'williams',
     name: 'Williams',
+    abbreviation: 'WIL',
     engine: 'Mercedes',
     primaryColor: '#64C4FF',
     accentColor: '#005AFF',
@@ -94,6 +103,7 @@ export const teams: Team[] = [
   {
     id: 'racing-bulls',
     name: 'Racing Bulls',
+    abbreviation: 'RCB',
     engine: 'Red Bull/Ford',
     primaryColor: '#6692FF',
     accentColor: '#FF1801',
@@ -104,6 +114,7 @@ export const teams: Team[] = [
   {
     id: 'haas',
     name: 'Haas',
+    abbreviation: 'HAS',
     engine: 'Ferrari',
     primaryColor: '#B6BABD',
     accentColor: '#E80020',
