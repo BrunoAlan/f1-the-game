@@ -1,8 +1,9 @@
-import type { Team, Driver, Track, WeatherCondition, TireCompound } from '../data/types'
+import type { Team, Driver, Track, WeatherCondition, TireCompound, TrackType } from '../data/types'
 import { calculateLapTime } from './lapSimulator'
 import { reduceGap, attemptOvertake } from './overtakingEngine'
 import { checkForIncident, compressGaps } from './incidentEngine'
 import { simulateWeatherForLap } from './weatherEngine'
+import { getTrackTypeModifiers } from './seasonEngine'
 
 export type DriverMode = 'push' | 'neutral' | 'save'
 
@@ -41,6 +42,8 @@ export interface RaceState {
   drivers: Driver[]
   playerDriverId: string
   events: RaceEvent[]
+  extraDNFChance: number
+  trackType: TrackType
 }
 
 interface InitParams {
@@ -50,6 +53,7 @@ interface InitParams {
   grid: { driverId: string; position: number }[]
   weather: WeatherCondition
   playerDriverId: string
+  extraDNFChance?: number
 }
 
 export function createInitialRaceState(params: InitParams): RaceState {
@@ -89,6 +93,8 @@ export function createInitialRaceState(params: InitParams): RaceState {
     drivers,
     playerDriverId,
     events: [],
+    extraDNFChance: params.extraDNFChance ?? 0,
+    trackType: track.type,
   }
 }
 
@@ -227,9 +233,14 @@ export function simulateLap(state: RaceState): RaceState {
     car.fuelLoad = Math.max(0, car.fuelLoad - fuelPerLap)
 
     // Incidents
+    const trackMods = getTrackTypeModifiers(next.trackType)
+    const isPlayerTeamCar =
+      car.teamId === next.cars.find((c) => c.driverId === next.playerDriverId)?.teamId
     const incident = checkForIncident({
       aggression: driver.aggression,
       reliability: team.reliability,
+      extraDNFChance: isPlayerTeamCar ? next.extraDNFChance : undefined,
+      incidentMultiplier: trackMods.incidentMultiplier,
     })
     if (incident.type !== 'none') {
       if (incident.dnf) {

@@ -3,12 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useWeekendStore } from '../stores/weekendStore'
 import { useStrategyStore } from '../stores/strategyStore'
 import { useRaceStore } from '../stores/raceStore'
+import { useSeasonStore } from '../stores/seasonStore'
 import { createInitialRaceState } from '../engine/raceSimulator'
 import type { DriverMode } from '../engine/raceSimulator'
 import type { TireCompound } from '../data/types'
 import { teams } from '../data/teams'
 import { drivers } from '../data/drivers'
 import { tracks } from '../data/tracks'
+import { calendar } from '../data/calendar'
 import { useRaceLoop } from '../hooks/useRaceLoop'
 import { useRadioMessages } from '../hooks/useRadioMessages'
 import { Leaderboard } from '../components/Leaderboard'
@@ -20,15 +22,24 @@ import { RadioAlert } from '../components/RadioAlert'
 import { SafetyCarBanner } from '../components/SafetyCarBanner'
 import { PixelButton } from '../components/PixelButton'
 import { saveBestResult } from '../utils/storage'
+import {
+  calculateRacePoints,
+  calculateRacePrizeMoney,
+  checkSponsorObjective,
+  applyComponentWear,
+  calculateRP,
+  getComponentDNFChance,
+  getModifiedTeamStats,
+} from '../engine/seasonEngine'
 
 const PIT_COMPOUNDS: TireCompound[] = ['soft', 'medium', 'hard']
 
 export function Race() {
-  const { qualifyingGrid, selectedDriverId, weather, setPhase } = useWeekendStore()
+  const { qualifyingGrid, selectedDriverId, weather } = useWeekendStore()
+  const currentTrackId = useWeekendStore((s) => s.currentTrackId)
   const stints = useStrategyStore((s) => s.stints)
   const { raceState, isRunning, setRaceState, setRunning, setPlayerMode } = useRaceStore()
   const callPitStop = useRaceStore((s) => s.callPitStop)
-  const resetRace = useRaceStore((s) => s.reset)
 
   const [showPitMenu, setShowPitMenu] = useState(false)
 
@@ -36,7 +47,7 @@ export function Race() {
   useEffect(() => {
     if (raceState) return
 
-    const track = tracks[0]
+    const track = tracks.find((t) => t.id === currentTrackId) ?? tracks[0]
     const playerDriverId = selectedDriverId ?? drivers[0].id
     const playerInitialTire: TireCompound = stints.length > 0 ? stints[0].compound : 'medium'
 
@@ -48,13 +59,29 @@ export function Race() {
           }))
         : drivers.map((d, i) => ({ driverId: d.id, position: i + 1 }))
 
+    // Apply R&D-modified team stats
+    const rdUpgrades = useSeasonStore.getState().rdUpgrades
+    const selectedTeamId = useWeekendStore.getState().selectedTeamId
+    const modifiedTeams = teams.map((team) => {
+      if (team.id === selectedTeamId) {
+        const mods = getModifiedTeamStats(team, rdUpgrades)
+        return { ...team, topSpeed: mods.topSpeed, cornering: mods.cornering }
+      }
+      return team
+    })
+
+    // Component DNF chance for player team
+    const components = useSeasonStore.getState().components
+    const extraDNFChance = getComponentDNFChance(components)
+
     const initial = createInitialRaceState({
-      teams,
+      teams: modifiedTeams,
       drivers,
       track,
       grid,
       weather,
       playerDriverId,
+      extraDNFChance,
     })
 
     // Set player's initial tire compound from strategy
@@ -77,7 +104,16 @@ export function Race() {
 
     setRaceState(initial)
     setRunning(true)
-  }, [raceState, qualifyingGrid, selectedDriverId, weather, stints, setRaceState, setRunning])
+  }, [
+    raceState,
+    qualifyingGrid,
+    selectedDriverId,
+    weather,
+    stints,
+    setRaceState,
+    setRunning,
+    currentTrackId,
+  ])
 
   // Drive the simulation
   useRaceLoop()
@@ -88,6 +124,9 @@ export function Race() {
   // Determine if the race is finished
   const raceFinished =
     raceState !== null && raceState.currentLap >= raceState.totalLaps && !isRunning
+
+  // Check if this is the last race
+  const isLastRace = useSeasonStore.getState().currentRaceIndex >= calendar.length - 1
 
   // Save best result on race finish
   const savedRef = useRef(false)
@@ -149,12 +188,100 @@ export function Race() {
     [callPitStop],
   )
 
-  const handleRaceAgain = useCallback(() => {
-    resetRace()
-    useWeekendStore.getState().reset()
+  const handleContinueToHQ = useCallback(() => {
+    const seasonState = useSeasonStore.getState()
+    const currentRaceState = useRaceStore.getState().raceState
+    if (!currentRaceState) return
+
+    // Calculate results for all drivers
+    const finalPositions = [...currentRaceState.cars]
+      .filter((c) => !c.dnf)
+      .sort((a, b) => a.cumulativeTime - b.cumulativeTime)
+
+    const driverPositions = currentRaceState.cars.map((car) => {
+      const pos = finalPositions.findIndex((c) => c.driverId === car.driverId)
+      return {
+        driverId: car.driverId,
+        position: car.dnf ? 0 : pos + 1,
+        dnf: car.dnf,
+      }
+    })
+
+    // Points for all drivers
+    const pointsPerDriver = driverPositions.map((dp) => ({
+      driverId: dp.driverId,
+      points: dp.dnf ? 0 : calculateRacePoints(dp.position),
+    }))
+
+    // Player team prize money
+    const selectedTeamId = useWeekendStore.getState().selectedTeamId
+    const playerTeamDrivers = driverPositions.filter((dp) => {
+      const d = drivers.find((dr) => dr.id === dp.driverId)
+      return d?.teamId === selectedTeamId
+    })
+    const bestPlayerFinish = Math.min(
+      ...playerTeamDrivers.filter((d) => !d.dnf).map((d) => d.position),
+      99,
+    )
+    const prizeMoney = calculateRacePrizeMoney(bestPlayerFinish)
+
+    // Check sponsors
+    const bothFinished = playerTeamDrivers.every((d) => !d.dnf)
+    const won = bestPlayerFinish === 1
+    const bestQualifying = Math.min(
+      ...useWeekendStore
+        .getState()
+        .qualifyingGrid.filter(
+          (g) => drivers.find((d) => d.id === g.driverId)?.teamId === selectedTeamId,
+        )
+        .map((g) => g.position),
+      99,
+    )
+
+    let sponsorPayouts = 0
+    for (const sponsor of seasonState.activeSponsors) {
+      if (
+        checkSponsorObjective(sponsor, {
+          bestFinish: bestPlayerFinish,
+          bothFinished,
+          won,
+          bestQualifying,
+        })
+      ) {
+        sponsorPayouts += sponsor.payout
+      }
+    }
+
+    // RP from practice data
+    const practiceData = useWeekendStore.getState().practiceData
+    const rp = calculateRP(bestPlayerFinish, practiceData.dataCollected)
+
+    // Apply component wear
+    const newComponents = applyComponentWear(seasonState.components, 'race')
+    useSeasonStore.getState().setComponents(newComponents)
+
+    // Add results
+    useSeasonStore.getState().addRaceResults({
+      driverPositions,
+      prizeMoney,
+      sponsorPayouts,
+      rp,
+      pointsPerDriver,
+    })
+
+    // Clean up race state
+    useRaceStore.getState().reset()
     useStrategyStore.getState().reset()
-    setPhase('team-select')
-  }, [resetRace, setPhase])
+
+    // Navigate
+    const currentIsLastRace = seasonState.currentRaceIndex >= calendar.length - 1
+    if (currentIsLastRace) {
+      useWeekendStore.getState().setPhase('season-end')
+    } else {
+      useSeasonStore.getState().advanceToNextRace()
+      useWeekendStore.getState().resetWeekend()
+    }
+  }, [])
 
   if (!raceState) {
     return (
@@ -260,8 +387,8 @@ export function Race() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          <PixelButton variant="success" onClick={handleRaceAgain} className="px-8">
-            RACE AGAIN
+          <PixelButton variant="success" onClick={handleContinueToHQ} className="px-8">
+            {isLastRace ? 'SEASON RESULTS' : 'CONTINUE TO HQ →'}
           </PixelButton>
         </motion.div>
       </div>
