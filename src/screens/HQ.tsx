@@ -547,7 +547,7 @@ function StandingsTab() {
 
 function NextRaceTab() {
   const currentRaceIndex = useSeasonStore((s) => s.currentRaceIndex)
-  const { resetWeekend, setCurrentTrack, setPhase } = useWeekendStore()
+  const resetWeekend = useWeekendStore((s) => s.resetWeekend)
 
   const race = calendar[currentRaceIndex]
   const track = tracks.find((t) => t.id === race.trackId)
@@ -558,8 +558,14 @@ function NextRaceTab() {
 
   const handleStart = () => {
     resetWeekend()
-    setCurrentTrack(track.id, track.hasSprint)
-    setPhase('practice')
+    // Use a single set call to avoid intermediate phase changes
+    // resetWeekend sets phase to 'hq', so we immediately override to 'practice'
+    // along with the track data in the same tick
+    useWeekendStore.setState({
+      currentTrackId: track.id,
+      isSprint: track.hasSprint,
+      phase: 'practice',
+    })
   }
 
   const typeLabel: Record<string, string> = {
