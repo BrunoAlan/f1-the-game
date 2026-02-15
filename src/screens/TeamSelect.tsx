@@ -1,7 +1,9 @@
 import { teams } from '../data/teams'
 import { drivers } from '../data/drivers'
+import { tracks } from '../data/tracks'
 import { useWeekendStore } from '../stores/weekendStore'
 import { PixelButton } from '../components/PixelButton'
+import { getBestForTeam } from '../utils/storage'
 
 export function TeamSelect() {
   const { selectedTeamId, selectedDriverId, selectTeam, setPhase } = useWeekendStore()
@@ -70,6 +72,16 @@ export function TeamSelect() {
                 <StatBar label="COR" value={team.cornering} color={team.primaryColor} />
                 <StatBar label="REL" value={team.reliability} color={team.primaryColor} />
               </div>
+
+              {(() => {
+                const best = getBestForTeam(team.id, tracks[0].id)
+                if (!best) return null
+                return (
+                  <div className="mt-2 font-pixel text-[8px] text-f1-accent/70 border-t border-f1-border/30 pt-1.5">
+                    BEST: P{best.position} — {best.driverName}
+                  </div>
+                )
+              })()}
             </div>
           )
         })}

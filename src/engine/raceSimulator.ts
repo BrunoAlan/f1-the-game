@@ -154,6 +154,58 @@ export function simulateLap(state: RaceState): RaceState {
       car.pitThisLap = false
     }
 
+    // AI pit strategy
+    if (car.driverId !== next.playerDriverId && !car.pitting) {
+      let shouldPit = false
+      let newCompound: TireCompound = car.tireCompound
+
+      // Weather-reactive pitting
+      const isOnSlicks =
+        car.tireCompound === 'soft' || car.tireCompound === 'medium' || car.tireCompound === 'hard'
+      const isOnWets = car.tireCompound === 'intermediate' || car.tireCompound === 'wet'
+
+      const isRaining = next.weather === 'light-rain' || next.weather === 'heavy-rain'
+
+      if (isRaining && isOnSlicks && Math.random() < 0.5) {
+        shouldPit = true
+        newCompound = next.weather === 'heavy-rain' ? 'wet' : 'intermediate'
+      } else if (next.weather === 'dry' && isOnWets && Math.random() < 0.5) {
+        shouldPit = true
+        newCompound = 'medium'
+      }
+
+      // Tire degradation pitting
+      if (!shouldPit) {
+        if (car.lapsOnTire > 20 && car.tireCompound === 'soft') {
+          shouldPit = true
+          newCompound = 'hard'
+        } else if (car.lapsOnTire > 30 && car.tireCompound === 'medium') {
+          shouldPit = true
+          newCompound = 'hard'
+        } else if (car.lapsOnTire > 40 && car.tireCompound === 'hard') {
+          shouldPit = true
+          newCompound = 'medium'
+        }
+      }
+
+      // Mandatory compound rule: must use 2 different compounds
+      if (
+        !shouldPit &&
+        car.compoundsUsed.length < 2 &&
+        next.currentLap >= next.totalLaps * 0.4 &&
+        next.currentLap <= next.totalLaps * 0.6
+      ) {
+        shouldPit = true
+        newCompound =
+          car.tireCompound === 'medium' ? 'hard' : car.tireCompound === 'hard' ? 'medium' : 'hard'
+      }
+
+      if (shouldPit) {
+        car.pitting = true
+        car.tireCompound = newCompound
+      }
+    }
+
     // Mode modifiers
     const modeSpeedMod = car.mode === 'push' ? 1.02 : car.mode === 'save' ? 0.97 : 1.0
     const modeDegMod = car.mode === 'push' ? 1.3 : car.mode === 'save' ? 0.7 : 1.0

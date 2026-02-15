@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWeekendStore } from '../stores/weekendStore'
 import { useStrategyStore } from '../stores/strategyStore'
@@ -19,6 +19,7 @@ import { LapCounter } from '../components/LapCounter'
 import { RadioAlert } from '../components/RadioAlert'
 import { SafetyCarBanner } from '../components/SafetyCarBanner'
 import { PixelButton } from '../components/PixelButton'
+import { saveBestResult } from '../utils/storage'
 
 const PIT_COMPOUNDS: TireCompound[] = ['soft', 'medium', 'hard']
 
@@ -87,6 +88,26 @@ export function Race() {
   // Determine if the race is finished
   const raceFinished =
     raceState !== null && raceState.currentLap >= raceState.totalLaps && !isRunning
+
+  // Save best result on race finish
+  const savedRef = useRef(false)
+  useEffect(() => {
+    if (!raceFinished || !raceState || savedRef.current) return
+    savedRef.current = true
+
+    const playerCar = raceState.cars.find((c) => c.driverId === raceState.playerDriverId)
+    if (playerCar && !playerCar.dnf) {
+      const driver = drivers.find((d) => d.id === playerCar.driverId)
+      if (driver) {
+        saveBestResult({
+          teamId: playerCar.teamId,
+          driverName: driver.name,
+          position: playerCar.position,
+          trackId: raceState.track.id,
+        })
+      }
+    }
+  }, [raceFinished, raceState])
 
   // Find the player car
   const playerCar = useMemo(() => {
