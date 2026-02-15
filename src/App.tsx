@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useWeekendStore } from './stores/weekendStore'
 import { TeamSelect } from './screens/TeamSelect'
+import { HQ } from './screens/HQ'
 import { Practice } from './screens/Practice'
 import { Qualifying } from './screens/Qualifying'
 import { StrategyRoom } from './screens/StrategyRoom'
@@ -14,11 +15,7 @@ function App() {
       case 'team-select':
         return <TeamSelect />
       case 'hq':
-        return (
-          <div className="min-h-screen bg-f1-bg flex items-center justify-center">
-            <p className="font-pixel text-f1-accent">HQ COMING SOON</p>
-          </div>
-        )
+        return <HQ />
       case 'practice':
         return <Practice />
       case 'qualifying':
