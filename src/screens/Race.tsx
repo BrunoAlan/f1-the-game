@@ -13,15 +13,14 @@ import { tracks } from '../data/tracks'
 import { calendar } from '../data/calendar'
 import { useRaceLoop } from '../hooks/useRaceLoop'
 import { useRadioMessages } from '../hooks/useRadioMessages'
-import { Leaderboard } from '../components/Leaderboard'
-import { TireIndicator } from '../components/TireIndicator'
-import { FuelIndicator } from '../components/FuelIndicator'
+import { BroadcastTimingTower, type TimingEntry } from '../components/BroadcastTimingTower'
+import { TrackMiniMap, type CarDot } from '../components/TrackMiniMap'
+import { TireCompoundIcon } from '../components/TireCompoundIcon'
 import { WeatherBadge } from '../components/WeatherBadge'
-import { LapCounter } from '../components/LapCounter'
 import { RadioAlert } from '../components/RadioAlert'
-import { SafetyCarBanner } from '../components/SafetyCarBanner'
 import { PixelButton } from '../components/PixelButton'
 import { saveBestResult } from '../utils/storage'
+import { formatMoney } from '../utils/formatMoney'
 import {
   calculateRacePoints,
   calculateRacePrizeMoney,
@@ -42,6 +41,9 @@ export function Race() {
   const callPitStop = useRaceStore((s) => s.callPitStop)
 
   const [showPitMenu, setShowPitMenu] = useState(false)
+
+  // Position tracking for timing tower
+  const prevPositions = useRef<Map<string, number>>(new Map())
 
   // Initialize race state on mount
   useEffect(() => {
@@ -154,24 +156,101 @@ export function Race() {
     return raceState.cars.find((c) => c.driverId === raceState.playerDriverId) ?? null
   }, [raceState])
 
-  // Grip calculation for player
-  const gripPercent = useMemo(() => {
-    if (!playerCar) return 100
-    return Math.max(0, 1 - playerCar.lapsOnTire * 0.03) * 100
-  }, [playerCar])
+  // Build timing entries for BroadcastTimingTower
+  const timingEntries = useMemo((): TimingEntry[] => {
+    if (!raceState) return []
 
-  // Position changes for results screen
-  const positionChanges = useMemo(() => {
-    if (!raceState || !raceFinished) return new Map<string, number>()
-    const changes = new Map<string, number>()
-    for (const car of raceState.cars) {
-      const gridEntry = qualifyingGrid.find((g) => g.driverId === car.driverId)
-      const startPos = gridEntry?.position ?? 20
-      const change = startPos - car.position
-      changes.set(car.driverId, change)
+    const activeCars = raceState.cars.filter((c) => !c.dnf)
+    const dnfCars = raceState.cars.filter((c) => c.dnf)
+
+    // Sort active cars by cumulative time
+    const sortedActive = [...activeCars].sort((a, b) => a.cumulativeTime - b.cumulativeTime)
+
+    // Find fastest lap among active cars
+    const fastestLapTime = Math.min(
+      ...activeCars.filter((c) => c.lastLapTime > 0).map((c) => c.lastLapTime),
+    )
+    const fastestLapDriverId = activeCars.find((c) => c.lastLapTime === fastestLapTime)?.driverId
+
+    // Build current positions map and calculate position changes
+    const currentPositions = new Map(sortedActive.map((car, i) => [car.driverId, i + 1]))
+    const positionChanges = new Map<string, number>()
+    for (const [driverId, pos] of currentPositions) {
+      const prev = prevPositions.current.get(driverId)
+      if (prev !== undefined && prev !== pos) {
+        positionChanges.set(driverId, prev - pos)
+      }
     }
-    return changes
-  }, [raceState, raceFinished, qualifyingGrid])
+    prevPositions.current = currentPositions
+
+    const leaderTime = sortedActive.length > 0 ? sortedActive[0].cumulativeTime : 0
+
+    const activeEntries: TimingEntry[] = sortedActive.map((car, i) => {
+      const gap = car.cumulativeTime - leaderTime
+      let status: TimingEntry['status'] = undefined
+      if (car.pitting) status = 'pit'
+      else if (car.driverId === fastestLapDriverId && raceState.currentLap > 1)
+        status = 'fastest-lap'
+
+      return {
+        driverId: car.driverId,
+        teamId: car.teamId,
+        position: i + 1,
+        value: i === 0 ? 'LEADER' : `+${gap.toFixed(1)}s`,
+        status,
+        tireCompound: car.tireCompound,
+        positionChange: positionChanges.get(car.driverId),
+      }
+    })
+
+    const dnfEntries: TimingEntry[] = dnfCars.map((car) => ({
+      driverId: car.driverId,
+      teamId: car.teamId,
+      position: 0,
+      value: 'DNF',
+      status: 'dnf' as const,
+      inactive: true,
+    }))
+
+    return [...activeEntries, ...dnfEntries]
+  }, [raceState])
+
+  // Build car dots for TrackMiniMap
+  const carDots = useMemo((): CarDot[] => {
+    if (!raceState) return []
+    const baseProg = raceState.currentLap / raceState.totalLaps
+    const sorted = [...raceState.cars]
+      .filter((c) => !c.dnf)
+      .sort((a, b) => a.cumulativeTime - b.cumulativeTime)
+
+    return sorted.map((car, i) => ({
+      driverId: car.driverId,
+      teamId: car.teamId,
+      progress: (baseProg + i * 0.03) % 1,
+      dnf: car.dnf,
+    }))
+  }, [raceState])
+
+  // Gap to car ahead for player
+  const gapToCarAhead = useMemo(() => {
+    if (!raceState || !playerCar || playerCar.dnf) return null
+    const activeSorted = [...raceState.cars]
+      .filter((c) => !c.dnf)
+      .sort((a, b) => a.cumulativeTime - b.cumulativeTime)
+    const playerIndex = activeSorted.findIndex((c) => c.driverId === playerCar.driverId)
+    if (playerIndex <= 0) return null
+    const carAhead = activeSorted[playerIndex - 1]
+    return playerCar.cumulativeTime - carAhead.cumulativeTime
+  }, [raceState, playerCar])
+
+  // Player position
+  const playerPosition = useMemo(() => {
+    if (!raceState || !playerCar || playerCar.dnf) return null
+    const activeSorted = [...raceState.cars]
+      .filter((c) => !c.dnf)
+      .sort((a, b) => a.cumulativeTime - b.cumulativeTime)
+    return activeSorted.findIndex((c) => c.driverId === playerCar.driverId) + 1
+  }, [raceState, playerCar])
 
   const handleModeChange = useCallback(
     (mode: DriverMode) => {
@@ -187,6 +266,82 @@ export function Race() {
     },
     [callPitStop],
   )
+
+  // Compute results data for the overlay
+  const resultsData = useMemo(() => {
+    if (!raceFinished || !raceState) return null
+
+    const finalPositions = [...raceState.cars]
+      .filter((c) => !c.dnf)
+      .sort((a, b) => a.cumulativeTime - b.cumulativeTime)
+
+    const pCar = raceState.cars.find((c) => c.driverId === raceState.playerDriverId)
+    if (!pCar) return null
+
+    const playerPos = pCar.dnf
+      ? 0
+      : finalPositions.findIndex((c) => c.driverId === pCar.driverId) + 1
+    const points = pCar.dnf ? 0 : calculateRacePoints(playerPos)
+
+    // Player team prize money
+    const selectedTeamId = useWeekendStore.getState().selectedTeamId
+    const driverPositions = raceState.cars.map((car) => {
+      const pos = finalPositions.findIndex((c) => c.driverId === car.driverId)
+      return { driverId: car.driverId, position: car.dnf ? 0 : pos + 1, dnf: car.dnf }
+    })
+    const playerTeamDrivers = driverPositions.filter((dp) => {
+      const d = drivers.find((dr) => dr.id === dp.driverId)
+      return d?.teamId === selectedTeamId
+    })
+    const bestPlayerFinish = Math.min(
+      ...playerTeamDrivers.filter((d) => !d.dnf).map((d) => d.position),
+      99,
+    )
+    const prizeMoney = calculateRacePrizeMoney(bestPlayerFinish)
+
+    // Sponsors
+    const seasonState = useSeasonStore.getState()
+    const bothFinished = playerTeamDrivers.every((d) => !d.dnf)
+    const won = bestPlayerFinish === 1
+    const bestQualifying = Math.min(
+      ...useWeekendStore
+        .getState()
+        .qualifyingGrid.filter(
+          (g) => drivers.find((d) => d.id === g.driverId)?.teamId === selectedTeamId,
+        )
+        .map((g) => g.position),
+      99,
+    )
+
+    const sponsorResults = seasonState.activeSponsors.map((sponsor) => {
+      const met = checkSponsorObjective(sponsor, {
+        bestFinish: bestPlayerFinish,
+        bothFinished,
+        won,
+        bestQualifying,
+      })
+      return { name: sponsor.name, met, payout: sponsor.payout }
+    })
+
+    // RP
+    const practiceData = useWeekendStore.getState().practiceData
+    const rp = calculateRP(bestPlayerFinish, practiceData.dataCollected)
+
+    // Component wear preview
+    const components = seasonState.components
+    const wornComponents = applyComponentWear(components, 'race')
+
+    return {
+      playerPos,
+      points,
+      prizeMoney,
+      sponsorResults,
+      rp,
+      pCar,
+      components,
+      wornComponents,
+    }
+  }, [raceFinished, raceState])
 
   const handleContinueToHQ = useCallback(() => {
     const seasonState = useSeasonStore.getState()
@@ -291,224 +446,353 @@ export function Race() {
     )
   }
 
-  // ── Results Mode ──
-  if (raceFinished) {
-    const finalStandings = [...raceState.cars]
-      .filter((c) => !c.dnf)
-      .sort((a, b) => a.cumulativeTime - b.cumulativeTime)
-    const dnfCars = raceState.cars.filter((c) => c.dnf)
-    const driverMap = new Map(drivers.map((d) => [d.id, d]))
-    const teamMap = new Map(teams.map((t) => [t.id, t]))
-
-    return (
-      <div className="min-h-screen bg-f1-bg px-4 py-8 flex flex-col items-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: 'spring', damping: 15 }}
-          className="text-center mb-8"
-        >
-          <h1 className="font-pixel text-2xl text-f1-accent mb-2">RACE COMPLETE</h1>
-          <p className="font-pixel text-[10px] text-f1-text/50">
-            {raceState.track.name} — {raceState.totalLaps} LAPS
-          </p>
-        </motion.div>
-
-        <div className="w-full max-w-2xl flex flex-col gap-1 mb-8">
-          {finalStandings.map((car, index) => {
-            const driver = driverMap.get(car.driverId)
-            const team = teamMap.get(car.teamId)
-            if (!driver || !team) return null
-            const isPlayer = car.driverId === raceState.playerDriverId
-            const change = positionChanges.get(car.driverId) ?? 0
-
-            return (
-              <motion.div
-                key={car.driverId}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-sm font-pixel text-[10px] ${
-                  isPlayer ? 'bg-slate-700/80 border-l-2' : 'bg-slate-800/40'
-                }`}
-                style={isPlayer ? { borderLeftColor: team.primaryColor } : undefined}
-              >
-                <span className="w-6 text-right text-f1-accent font-bold">P{index + 1}</span>
-                <div
-                  className="w-1 h-4 rounded-sm shrink-0"
-                  style={{ backgroundColor: team.primaryColor }}
-                />
-                <span className={`w-10 ${isPlayer ? 'text-f1-accent' : 'text-f1-text'}`}>
-                  {driver.shortName}
-                </span>
-                <span className="flex-1 text-f1-text/50 truncate">{team.name}</span>
-                <span
-                  className={`w-16 text-right ${
-                    change > 0
-                      ? 'text-f1-success'
-                      : change < 0
-                        ? 'text-f1-danger'
-                        : 'text-f1-text/40'
-                  }`}
-                >
-                  {change > 0 ? `\u25B2${change}` : change < 0 ? `\u25BC${Math.abs(change)}` : '--'}
-                </span>
-              </motion.div>
-            )
-          })}
-
-          {dnfCars.map((car) => {
-            const driver = driverMap.get(car.driverId)
-            const team = teamMap.get(car.teamId)
-            if (!driver || !team) return null
-
-            return (
-              <motion.div
-                key={car.driverId}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.4 }}
-                className="flex items-center gap-2 px-3 py-2 rounded-sm font-pixel text-[10px] bg-slate-800/20"
-              >
-                <span className="w-6 text-right text-f1-text/30">--</span>
-                <div
-                  className="w-1 h-4 rounded-sm shrink-0 opacity-30"
-                  style={{ backgroundColor: team.primaryColor }}
-                />
-                <span className="w-10 text-f1-text/30 line-through">{driver.shortName}</span>
-                <span className="flex-1 text-f1-text/20 truncate">{team.name}</span>
-                <span className="text-f1-danger/60 w-16 text-right font-bold">DNF</span>
-              </motion.div>
-            )
-          })}
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-        >
-          <PixelButton variant="success" onClick={handleContinueToHQ} className="px-8">
-            {isLastRace ? 'SEASON RESULTS' : 'CONTINUE TO HQ →'}
-          </PixelButton>
-        </motion.div>
-      </div>
-    )
-  }
-
-  // ── Race Mode ──
   const currentMode = playerCar?.mode ?? 'neutral'
 
   return (
-    <div className="min-h-screen bg-f1-bg px-4 py-4 flex flex-col">
-      <SafetyCarBanner active={raceState.safetyCar} />
-
-      {/* Top Bar */}
-      <div className="flex items-center justify-between mb-4 px-2">
-        <LapCounter currentLap={raceState.currentLap} totalLaps={raceState.totalLaps} />
-        <WeatherBadge weather={raceState.weather} />
+    <div className="h-screen bg-f1-bg flex flex-col overflow-hidden">
+      {/* ── Sticky Header ── */}
+      <div
+        className={`sticky top-0 z-10 px-4 py-2 flex items-center justify-between border-b ${
+          raceState.safetyCar
+            ? 'bg-f1-warning text-black border-f1-warning'
+            : 'bg-f1-surface border-f1-border'
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <span className="font-pixel text-[10px] uppercase tracking-wide">
+            {raceState.track.name}
+          </span>
+          {raceState.safetyCar && (
+            <span className="font-pixel text-[8px] font-bold animate-pulse">SAFETY CAR</span>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="font-pixel text-[10px] tabular-nums">
+            LAP {raceState.currentLap}/{raceState.totalLaps}
+          </span>
+          <WeatherBadge weather={raceState.weather} />
+          {raceFinished && (
+            <span className="font-pixel text-[8px] text-f1-accent font-bold">FINISHED</span>
+          )}
+        </div>
       </div>
 
-      {/* Leaderboard */}
-      <div className="flex-1 overflow-y-auto mb-4 border-2 border-f1-border rounded-sm p-2 bg-slate-900/40">
-        <Leaderboard
-          cars={raceState.cars}
-          drivers={drivers}
-          teams={teams}
-          playerDriverId={raceState.playerDriverId}
-        />
-      </div>
+      {/* ── Main Content: 2 Columns ── */}
+      <div className="flex-1 flex min-h-0 overflow-hidden">
+        {/* Left column: Timing Tower */}
+        <div className="flex-1 overflow-y-auto p-2">
+          <BroadcastTimingTower
+            entries={timingEntries}
+            drivers={drivers}
+            teams={teams}
+            playerDriverId={raceState.playerDriverId}
+          />
+        </div>
 
-      {/* Player Status */}
-      {playerCar && !playerCar.dnf && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="border-2 border-f1-border rounded-sm p-3 mb-4 bg-slate-900/60"
-        >
-          <p className="font-pixel text-[9px] text-f1-text/40 mb-2">YOUR CAR</p>
-          <div className="flex flex-wrap items-center gap-4">
-            <TireIndicator
-              compound={playerCar.tireCompound}
-              gripPercent={gripPercent}
-              lapsOnTire={playerCar.lapsOnTire}
-            />
-            <FuelIndicator fuelPercent={playerCar.fuelLoad * 100} />
+        {/* Right column: Player Panel (hidden on mobile) */}
+        <div className="w-64 hidden md:flex flex-col border-l border-f1-border bg-f1-surface/40 overflow-y-auto">
+          {/* Track Mini Map */}
+          <div className="p-3 border-b border-f1-border">
+            <p className="font-pixel text-[8px] text-f1-text/40 mb-2 uppercase">Track Map</p>
+            <div className="h-36">
+              <TrackMiniMap
+                trackId={raceState.track.id}
+                cars={carDots}
+                teams={teams}
+                playerDriverId={raceState.playerDriverId}
+              />
+            </div>
           </div>
-        </motion.div>
-      )}
 
-      {/* Player DNF notice */}
-      {playerCar && playerCar.dnf && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="border-2 border-f1-danger rounded-sm p-3 mb-4 bg-red-950/30 text-center"
-        >
-          <p className="font-pixel text-sm text-f1-danger">RETIRED</p>
-          <p className="font-pixel text-[9px] text-f1-text/50 mt-1">Your race is over.</p>
-        </motion.div>
-      )}
+          {/* Player Info */}
+          {playerCar && !playerCar.dnf && (
+            <div className="p-3 flex flex-col gap-3">
+              {/* Position */}
+              <div className="text-center">
+                <p className="font-pixel text-[8px] text-f1-text/40 uppercase">Position</p>
+                <p className="font-pixel text-3xl text-f1-accent leading-none mt-1">
+                  P{playerPosition ?? '--'}
+                </p>
+                {gapToCarAhead !== null && (
+                  <p className="font-pixel text-[9px] text-f1-text/50 mt-1">
+                    +{gapToCarAhead.toFixed(1)}s to car ahead
+                  </p>
+                )}
+              </div>
 
-      {/* Controls */}
-      {playerCar && !playerCar.dnf && (
-        <div className="border-2 border-f1-border rounded-sm p-3 bg-slate-900/60">
-          {/* Mode Buttons */}
-          <div className="flex gap-2 mb-3">
-            <PixelButton
-              variant="danger"
-              onClick={() => handleModeChange('push')}
-              className={`flex-1 ${currentMode === 'push' ? 'ring-2 ring-f1-danger' : 'opacity-60'}`}
+              {/* Tire info */}
+              <div className="flex items-center gap-2">
+                <TireCompoundIcon compound={playerCar.tireCompound} size="md" />
+                <div>
+                  <p className="font-pixel text-[9px] text-f1-text uppercase">
+                    {playerCar.tireCompound}
+                  </p>
+                  <p className="font-pixel text-[8px] text-f1-text/40">
+                    {playerCar.lapsOnTire} laps on tire
+                  </p>
+                </div>
+              </div>
+
+              {/* Fuel bar */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <p className="font-pixel text-[8px] text-f1-text/40 uppercase">Fuel</p>
+                  <p className="font-pixel text-[8px] text-f1-text/50">
+                    {Math.round(playerCar.fuelLoad * 100)}%
+                  </p>
+                </div>
+                <div className="w-full h-2 bg-f1-bg rounded-sm overflow-hidden">
+                  <div
+                    className="h-full transition-all duration-300"
+                    style={{
+                      width: `${playerCar.fuelLoad * 100}%`,
+                      backgroundColor:
+                        playerCar.fuelLoad > 0.3
+                          ? '#22c55e'
+                          : playerCar.fuelLoad > 0.1
+                            ? '#eab308'
+                            : '#ef4444',
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Mode indicator */}
+              <div>
+                <p className="font-pixel text-[8px] text-f1-text/40 uppercase mb-1">Mode</p>
+                <p
+                  className={`font-pixel text-[10px] font-bold uppercase ${
+                    currentMode === 'push'
+                      ? 'text-f1-danger'
+                      : currentMode === 'save'
+                        ? 'text-f1-success'
+                        : 'text-f1-warning'
+                  }`}
+                >
+                  {currentMode}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Player DNF notice */}
+          {playerCar && playerCar.dnf && (
+            <div className="p-4 text-center">
+              <p className="font-pixel text-sm text-f1-danger">RETIRED</p>
+              <p className="font-pixel text-[9px] text-f1-text/50 mt-1">Your race is over.</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Race Results Overlay ── */}
+      <AnimatePresence>
+        {raceFinished && resultsData && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-20 bg-f1-bg/95 flex flex-col items-center justify-center px-4 overflow-y-auto py-8"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: 'spring', damping: 15 }}
+              className="text-center mb-6"
             >
-              PUSH
-            </PixelButton>
-            <PixelButton
-              variant="default"
-              onClick={() => handleModeChange('neutral')}
-              className={`flex-1 ${currentMode === 'neutral' ? 'ring-2 ring-f1-accent' : 'opacity-60'}`}
+              <h1 className="font-pixel text-2xl text-f1-accent mb-2">RACE COMPLETE</h1>
+              <p className="font-pixel text-[10px] text-f1-text/50">
+                {raceState.track.name} -- {raceState.totalLaps} LAPS
+              </p>
+            </motion.div>
+
+            {/* Player Result Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="w-full max-w-sm bg-f1-surface border border-f1-border rounded-sm p-4 mb-4"
             >
-              NEUTRAL
-            </PixelButton>
-            <PixelButton
-              variant="success"
+              <p className="font-pixel text-[8px] text-f1-text/40 mb-3 uppercase">Your Result</p>
+              <div className="text-center mb-4">
+                <p className="font-pixel text-4xl text-f1-accent leading-none">
+                  {resultsData.pCar.dnf ? 'DNF' : `P${resultsData.playerPos}`}
+                </p>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <p className="font-pixel text-[8px] text-f1-text/40">POINTS</p>
+                  <p className="font-pixel text-sm text-f1-accent">{resultsData.points}</p>
+                </div>
+                <div>
+                  <p className="font-pixel text-[8px] text-f1-text/40">PRIZE</p>
+                  <p className="font-pixel text-sm text-f1-success">
+                    {formatMoney(resultsData.prizeMoney)}
+                  </p>
+                </div>
+                <div>
+                  <p className="font-pixel text-[8px] text-f1-text/40">RP</p>
+                  <p className="font-pixel text-sm text-blue-400">+{resultsData.rp}</p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Component Wear Summary */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="w-full max-w-sm bg-f1-surface border border-f1-border rounded-sm p-4 mb-4"
+            >
+              <p className="font-pixel text-[8px] text-f1-text/40 mb-2 uppercase">Component Wear</p>
+              <div className="flex flex-col gap-1">
+                {resultsData.wornComponents.map((comp) => {
+                  const prev = resultsData.components.find((c) => c.type === comp.type)
+                  const wearDelta = prev ? prev.healthPercent - comp.healthPercent : 0
+                  return (
+                    <div key={comp.type} className="flex items-center justify-between">
+                      <span className="font-pixel text-[9px] text-f1-text uppercase">
+                        {comp.type}
+                      </span>
+                      <span
+                        className={`font-pixel text-[9px] ${
+                          comp.healthPercent > 50
+                            ? 'text-f1-success'
+                            : comp.healthPercent > 25
+                              ? 'text-f1-warning'
+                              : 'text-f1-danger'
+                        }`}
+                      >
+                        {comp.healthPercent}%{wearDelta > 0 ? ` (-${wearDelta})` : ''}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </motion.div>
+
+            {/* Sponsor Objectives */}
+            {resultsData.sponsorResults.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="w-full max-w-sm bg-f1-surface border border-f1-border rounded-sm p-4 mb-6"
+              >
+                <p className="font-pixel text-[8px] text-f1-text/40 mb-2 uppercase">Sponsors</p>
+                <div className="flex flex-col gap-1">
+                  {resultsData.sponsorResults.map((sr) => (
+                    <div key={sr.name} className="flex items-center justify-between">
+                      <span className="font-pixel text-[9px] text-f1-text">{sr.name}</span>
+                      <span
+                        className={`font-pixel text-[9px] ${sr.met ? 'text-f1-success' : 'text-f1-danger'}`}
+                      >
+                        {sr.met ? `+${formatMoney(sr.payout)}` : 'MISSED'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <PixelButton variant="success" onClick={handleContinueToHQ} className="px-8">
+                {isLastRace ? 'SEASON RESULTS' : 'CONTINUE TO HQ'}
+              </PixelButton>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Sticky Bottom Action Bar ── */}
+      {playerCar && !playerCar.dnf && !raceFinished && (
+        <div className="sticky bottom-0 z-10 bg-f1-surface border-t border-f1-border px-4 py-3">
+          <div className="flex items-center gap-2">
+            {/* Mode buttons */}
+            <button
               onClick={() => handleModeChange('save')}
-              className={`flex-1 ${currentMode === 'save' ? 'ring-2 ring-f1-success' : 'opacity-60'}`}
+              className={`flex-1 font-pixel text-[10px] py-2 rounded-sm border transition-colors ${
+                currentMode === 'save'
+                  ? 'bg-f1-success text-black border-f1-success'
+                  : 'bg-transparent text-f1-success border-f1-success/50 hover:border-f1-success'
+              }`}
             >
               SAVE
-            </PixelButton>
-          </div>
-
-          {/* Pit Stop */}
-          <div className="relative">
-            <PixelButton
-              variant="warning"
-              onClick={() => setShowPitMenu((prev) => !prev)}
-              className="w-full"
-              disabled={playerCar.pitting}
+            </button>
+            <button
+              onClick={() => handleModeChange('neutral')}
+              className={`flex-1 font-pixel text-[10px] py-2 rounded-sm border transition-colors ${
+                currentMode === 'neutral'
+                  ? 'bg-f1-warning text-black border-f1-warning'
+                  : 'bg-transparent text-f1-warning border-f1-warning/50 hover:border-f1-warning'
+              }`}
             >
-              {playerCar.pitting ? 'PITTING...' : 'BOX NOW'}
-            </PixelButton>
+              NEUTRAL
+            </button>
+            <button
+              onClick={() => handleModeChange('push')}
+              className={`flex-1 font-pixel text-[10px] py-2 rounded-sm border transition-colors ${
+                currentMode === 'push'
+                  ? 'bg-f1-danger text-black border-f1-danger'
+                  : 'bg-transparent text-f1-danger border-f1-danger/50 hover:border-f1-danger'
+              }`}
+            >
+              PUSH
+            </button>
 
-            <AnimatePresence>
-              {showPitMenu && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="absolute bottom-full left-0 right-0 mb-2 bg-slate-800 border-2 border-f1-border rounded-sm p-2 flex gap-2 z-40"
-                >
-                  {PIT_COMPOUNDS.map((compound) => (
-                    <PixelButton
-                      key={compound}
-                      onClick={() => handlePitStop(compound)}
-                      className="flex-1 uppercase"
-                    >
-                      {compound}
-                    </PixelButton>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* Separator */}
+            <div className="w-px h-8 bg-f1-border mx-1" />
+
+            {/* Box Now */}
+            <div className="relative">
+              <button
+                onClick={() => setShowPitMenu((prev) => !prev)}
+                disabled={playerCar.pitting}
+                className={`font-pixel text-[10px] px-4 py-2 rounded-sm border transition-colors ${
+                  playerCar.pitting
+                    ? 'bg-f1-warning/20 text-f1-warning border-f1-warning/30 cursor-not-allowed'
+                    : 'bg-f1-warning text-black border-f1-warning hover:bg-f1-warning/80'
+                }`}
+              >
+                {playerCar.pitting ? 'BOXING...' : 'BOX NOW'}
+              </button>
+
+              <AnimatePresence>
+                {showPitMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute bottom-full right-0 mb-2 bg-f1-surface border border-f1-border rounded-sm p-2 flex gap-2 z-40"
+                  >
+                    {PIT_COMPOUNDS.map((compound) => (
+                      <button
+                        key={compound}
+                        onClick={() => handlePitStop(compound)}
+                        className="font-pixel text-[9px] px-3 py-1.5 bg-f1-bg border border-f1-border rounded-sm hover:border-f1-accent transition-colors uppercase text-f1-text"
+                      >
+                        {compound}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
+        </div>
+      )}
+
+      {/* Player DNF bar (mobile view) */}
+      {playerCar && playerCar.dnf && !raceFinished && (
+        <div className="sticky bottom-0 z-10 bg-f1-surface border-t border-f1-danger/50 px-4 py-3 text-center">
+          <p className="font-pixel text-sm text-f1-danger">RETIRED</p>
+          <p className="font-pixel text-[8px] text-f1-text/50 mt-1">
+            Waiting for race to finish...
+          </p>
         </div>
       )}
 
