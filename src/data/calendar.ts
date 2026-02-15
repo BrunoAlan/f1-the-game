@@ -1,0 +1,28 @@
+import type { CalendarEntry } from './types'
+
+export const calendar: CalendarEntry[] = [
+  { round: 1, date: '8 Mar', gpName: 'Australian Grand Prix', trackId: 'australia' },
+  { round: 2, date: '15 Mar', gpName: 'Chinese Grand Prix', trackId: 'china' },
+  { round: 3, date: '29 Mar', gpName: 'Japanese Grand Prix', trackId: 'japan' },
+  { round: 4, date: '12 Apr', gpName: 'Bahrain Grand Prix', trackId: 'bahrain' },
+  { round: 5, date: '19 Apr', gpName: 'Saudi Arabian Grand Prix', trackId: 'saudi-arabia' },
+  { round: 6, date: '3 May', gpName: 'Miami Grand Prix', trackId: 'miami' },
+  { round: 7, date: '24 May', gpName: 'Canadian Grand Prix', trackId: 'canada' },
+  { round: 8, date: '7 Jun', gpName: 'Monaco Grand Prix', trackId: 'monaco' },
+  { round: 9, date: '14 Jun', gpName: 'Spanish Grand Prix', trackId: 'spain' },
+  { round: 10, date: '28 Jun', gpName: 'Austrian Grand Prix', trackId: 'austria' },
+  { round: 11, date: '5 Jul', gpName: 'British Grand Prix', trackId: 'great-britain' },
+  { round: 12, date: '19 Jul', gpName: 'Belgian Grand Prix', trackId: 'belgium' },
+  { round: 13, date: '26 Jul', gpName: 'Hungarian Grand Prix', trackId: 'hungary' },
+  { round: 14, date: '23 Aug', gpName: 'Dutch Grand Prix', trackId: 'netherlands' },
+  { round: 15, date: '6 Sep', gpName: 'Italian Grand Prix', trackId: 'italy' },
+  { round: 16, date: '13 Sep', gpName: 'Madrid Grand Prix', trackId: 'madrid' },
+  { round: 17, date: '26 Sep', gpName: 'Azerbaijan Grand Prix', trackId: 'azerbaijan' },
+  { round: 18, date: '11 Oct', gpName: 'Singapore Grand Prix', trackId: 'singapore' },
+  { round: 19, date: '25 Oct', gpName: 'United States Grand Prix', trackId: 'united-states' },
+  { round: 20, date: '1 Nov', gpName: 'Mexican Grand Prix', trackId: 'mexico' },
+  { round: 21, date: '8 Nov', gpName: 'Brazilian Grand Prix', trackId: 'brazil' },
+  { round: 22, date: '21 Nov', gpName: 'Las Vegas Grand Prix', trackId: 'las-vegas' },
+  { round: 23, date: '29 Nov', gpName: 'Qatar Grand Prix', trackId: 'qatar' },
+  { round: 24, date: '6 Dec', gpName: 'Abu Dhabi Grand Prix', trackId: 'abu-dhabi' },
+]

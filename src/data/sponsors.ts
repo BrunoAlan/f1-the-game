@@ -1,0 +1,88 @@
+import type { Sponsor } from './types'
+
+export const sponsorPool: Omit<Sponsor, 'racesRemaining'>[] = [
+  {
+    id: 'pixel-energy',
+    name: 'Pixel Energy',
+    objective: { type: 'finish-top', position: 10 },
+    payout: 200_000,
+    duration: 5,
+  },
+  {
+    id: 'bytespeed-tech',
+    name: 'ByteSpeed Tech',
+    objective: { type: 'finish-top', position: 5 },
+    payout: 400_000,
+    duration: 3,
+  },
+  {
+    id: 'retrofuel',
+    name: 'RetroFuel',
+    objective: { type: 'both-finish' },
+    payout: 150_000,
+    duration: 8,
+  },
+  {
+    id: 'neonware',
+    name: 'NeonWare',
+    objective: { type: 'score-sprint-points' },
+    payout: 100_000,
+    duration: 4,
+  },
+  {
+    id: 'turbochip',
+    name: 'TurboChip Ltd',
+    objective: { type: 'win' },
+    payout: 1_000_000,
+    duration: 24,
+  },
+  {
+    id: 'gridforce',
+    name: 'GridForce',
+    objective: { type: 'qualify-top', position: 3 },
+    payout: 300_000,
+    duration: 3,
+  },
+  {
+    id: 'nitro-labs',
+    name: 'Nitro Labs',
+    objective: { type: 'finish-top', position: 3 },
+    payout: 500_000,
+    duration: 4,
+  },
+  {
+    id: 'circuit-co',
+    name: 'Circuit Co.',
+    objective: { type: 'both-finish' },
+    payout: 100_000,
+    duration: 10,
+  },
+  {
+    id: 'apex-dynamics',
+    name: 'Apex Dynamics',
+    objective: { type: 'finish-top', position: 7 },
+    payout: 250_000,
+    duration: 6,
+  },
+  {
+    id: 'velocity-io',
+    name: 'Velocity.io',
+    objective: { type: 'qualify-top', position: 5 },
+    payout: 200_000,
+    duration: 5,
+  },
+  {
+    id: 'turbo-drink',
+    name: 'Turbo Drink',
+    objective: { type: 'score-sprint-points' },
+    payout: 150_000,
+    duration: 6,
+  },
+  {
+    id: 'datastream',
+    name: 'DataStream',
+    objective: { type: 'finish-top', position: 15 },
+    payout: 100_000,
+    duration: 10,
+  },
+]
