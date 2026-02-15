@@ -30,9 +30,9 @@ export function TeamSelectCard({
       }}
       whileHover={{ borderColor: `${team.primaryColor}66` }}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
         {/* Zone 1+2: Badge + Team Name */}
-        <div className="flex items-center gap-3 min-w-[160px]">
+        <div className="flex items-center gap-3 sm:min-w-[160px]">
           <TeamColorBadge abbreviation={team.abbreviation} color={team.primaryColor} />
           <div>
             <div className="font-pixel text-[10px] text-f1-text">{team.name}</div>
@@ -41,7 +41,7 @@ export function TeamSelectCard({
         </div>
 
         {/* Zone 3: Stats */}
-        <div className="flex-1 flex flex-col gap-1 min-w-[140px]">
+        <div className="flex-1 flex flex-col gap-1 sm:min-w-[140px]">
           <BroadcastStatBar label="SPD" value={team.topSpeed} color={team.primaryColor} />
           <BroadcastStatBar label="COR" value={team.cornering} color={team.primaryColor} />
           <BroadcastStatBar label="REL" value={team.reliability} color={team.primaryColor} />
