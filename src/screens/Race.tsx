@@ -663,7 +663,8 @@ export function Race() {
                               : 'text-f1-danger'
                         }`}
                       >
-                        {comp.healthPercent}%{wearDelta > 0 ? ` (-${wearDelta})` : ''}
+                        {Math.round(comp.healthPercent)}%
+                        {wearDelta > 0 ? ` (-${Math.round(wearDelta)})` : ''}
                       </span>
                     </div>
                   )
