@@ -4,6 +4,7 @@ interface PixelButtonProps {
   variant?: 'default' | 'danger' | 'success' | 'warning'
   disabled?: boolean
   className?: string
+  style?: React.CSSProperties
 }
 
 const variantStyles: Record<string, string> = {
@@ -19,12 +20,14 @@ export function PixelButton({
   variant = 'default',
   disabled = false,
   className = '',
+  style,
 }: PixelButtonProps) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       className={`border-2 bg-slate-800 hover:bg-slate-700 px-4 py-3 font-pixel text-[10px] text-f1-text transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${variantStyles[variant]} ${className}`}
+      style={style}
     >
       {children}
     </button>
