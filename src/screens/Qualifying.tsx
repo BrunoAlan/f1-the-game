@@ -71,14 +71,17 @@ const MODE_OPTIONS: {
 
 export function Qualifying() {
   const { selectedDriverId, weather, setQualifyingGrid, setPhase } = useWeekendStore()
-  const track = tracks[0]
+  const currentTrackId = useWeekendStore((s) => s.currentTrackId)
+  const track = tracks.find((t) => t.id === currentTrackId) ?? tracks[0]
 
   const [qIndex, setQIndex] = useState(0)
   const [internalPhase, setInternalPhase] = useState<InternalPhase>('mode-select')
   const [sessionResults, setSessionResults] = useState<QualifyingResult[]>([])
   const [playerResult, setPlayerResult] = useState<QualifyingResult | null>(null)
   const [eliminatedIds, setEliminatedIds] = useState<Set<string>>(new Set())
-  const [finalGrid, setFinalGrid] = useState<{ driverId: string; position: number; time: number }[]>([])
+  const [finalGrid, setFinalGrid] = useState<
+    { driverId: string; position: number; time: number }[]
+  >([])
 
   const currentQ = Q_SESSIONS[qIndex]
   const isLastSession = qIndex >= Q_SESSIONS.length - 1
@@ -238,7 +241,9 @@ export function Qualifying() {
             animate={{ opacity: 1 }}
             className="flex flex-col items-center"
           >
-            <h1 className="font-pixel text-xl text-f1-danger mb-2">ELIMINATED IN {Q_SESSIONS[qIndex - 1]?.name}</h1>
+            <h1 className="font-pixel text-xl text-f1-danger mb-2">
+              ELIMINATED IN {Q_SESSIONS[qIndex - 1]?.name}
+            </h1>
             <p className="font-pixel text-[10px] text-f1-text/50 mb-6">
               Your qualifying session is over. Remaining sessions will be simulated.
             </p>
@@ -311,7 +316,10 @@ function ModeSelectPhase({
         <p className="font-pixel text-[10px] text-f1-text/60 mb-1">{sessionLabel}</p>
         <p className="font-pixel text-[10px] text-f1-text/40 mb-1">{trackName}</p>
         <p className="font-pixel text-[9px] text-f1-text/30">
-          {driversCount} DRIVERS{eliminatedCount > 0 ? ` — BOTTOM ${eliminatedCount} ELIMINATED` : ' — POLE POSITION SHOOTOUT'}
+          {driversCount} DRIVERS
+          {eliminatedCount > 0
+            ? ` — BOTTOM ${eliminatedCount} ELIMINATED`
+            : ' — POLE POSITION SHOOTOUT'}
         </p>
       </div>
 
@@ -555,7 +563,9 @@ function ResultsPhase({
         ) : (
           <>
             <p className="font-pixel text-[10px] text-f1-text/50 mb-1">
-              {isLastSession ? 'GRID POSITION' : `ADVANCING TO ${Q_SESSIONS[Math.min(results.length - 1, 2)]?.name || 'NEXT'}`}
+              {isLastSession
+                ? 'GRID POSITION'
+                : `ADVANCING TO ${Q_SESSIONS[Math.min(results.length - 1, 2)]?.name || 'NEXT'}`}
             </p>
             <p className="font-pixel text-2xl text-f1-accent">P{playerPosition}</p>
           </>
@@ -563,7 +573,11 @@ function ResultsPhase({
       </div>
 
       <PixelButton variant="success" onClick={onNext} className="px-6">
-        {isLastSession ? 'PROCEED TO STRATEGY' : playerIsEliminated ? 'SIMULATE REMAINING & PROCEED' : `CONTINUE TO ${Q_SESSIONS[Math.min(results.length, 2)]?.name || 'NEXT'}`}
+        {isLastSession
+          ? 'PROCEED TO STRATEGY'
+          : playerIsEliminated
+            ? 'SIMULATE REMAINING & PROCEED'
+            : `CONTINUE TO ${Q_SESSIONS[Math.min(results.length, 2)]?.name || 'NEXT'}`}
       </PixelButton>
     </>
   )

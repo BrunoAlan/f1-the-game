@@ -23,7 +23,8 @@ const COMPOUND_DISPLAY: Record<string, { label: string; color: string }> = {
 
 export function Practice() {
   const { setPracticeData, setPhase, weather } = useWeekendStore()
-  const track = tracks[0]
+  const currentTrackId = useWeekendStore((s) => s.currentTrackId)
+  const track = tracks.find((t) => t.id === currentTrackId) ?? tracks[0]
 
   const [fpIndex, setFpIndex] = useState(0)
   const [tick, setTick] = useState(0)
@@ -57,7 +58,8 @@ export function Practice() {
   }, [sessionComplete, transitioning, currentFP])
 
   const sessionProgress = Math.min((tick / currentFP.ticks) * 100, 100)
-  const overallProgress = ((fpIndex + (sessionComplete ? 1 : tick / currentFP.ticks)) / FP_SESSIONS.length) * 100
+  const overallProgress =
+    ((fpIndex + (sessionComplete ? 1 : tick / currentFP.ticks)) / FP_SESSIONS.length) * 100
 
   const handleNextSession = useCallback(() => {
     setTransitioning(true)
@@ -223,9 +225,7 @@ function TireCard({
       {!isRevealed && (
         <div
           className={`absolute inset-0 bg-slate-800/80 border-2 rounded-sm flex flex-col items-center justify-center gap-2 transition-colors ${
-            isCurrentTarget
-              ? 'border-f1-accent/50 animate-pulse'
-              : 'border-f1-border'
+            isCurrentTarget ? 'border-f1-accent/50 animate-pulse' : 'border-f1-border'
           }`}
         >
           <span className="font-pixel text-[11px] text-f1-text/50">{label}</span>
