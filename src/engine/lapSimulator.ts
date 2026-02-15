@@ -1,5 +1,6 @@
-import type { TireCompound, WeatherCondition } from '../data/types'
+import type { TireCompound, WeatherCondition, TrackType } from '../data/types'
 import { calculateTireGrip, getWeatherGripMultiplier } from './tireModel'
+import { getTrackTypeModifiers } from './seasonEngine'
 import { randomBetween } from '../utils/random'
 
 interface LapTimeParams {
@@ -10,11 +11,21 @@ interface LapTimeParams {
   fuelLoad: number
   weather: WeatherCondition
   baseLapTime: number
+  trackType?: TrackType
 }
 
 export function calculateLapTime(params: LapTimeParams): number {
-  const { car, driver, tireCompound, lapsOnTire, fuelLoad, weather, baseLapTime } = params
-  const carFactor = 1 - car.topSpeed * 0.002
+  const { car, driver, tireCompound, lapsOnTire, fuelLoad, weather, baseLapTime, trackType } =
+    params
+
+  let effectiveTopSpeed = car.topSpeed
+
+  if (trackType) {
+    const mods = getTrackTypeModifiers(trackType)
+    effectiveTopSpeed = car.topSpeed * mods.topSpeedWeight
+  }
+
+  const carFactor = 1 - effectiveTopSpeed * 0.002
   const driverFactor = 1 - driver.speed * 0.001
   const fuelFactor = 1 + fuelLoad * 0.03
   const tireGrip = calculateTireGrip(tireCompound, lapsOnTire, driver.tireManagement)
