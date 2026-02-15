@@ -2,6 +2,7 @@ import { teams } from '../data/teams'
 import { drivers } from '../data/drivers'
 import { tracks } from '../data/tracks'
 import { useWeekendStore } from '../stores/weekendStore'
+import { useSeasonStore } from '../stores/seasonStore'
 import { PixelButton } from '../components/PixelButton'
 import { getBestForTeam } from '../utils/storage'
 
@@ -14,7 +15,8 @@ export function TeamSelect() {
 
   const handleStart = () => {
     if (selectedDriverId) {
-      setPhase('practice')
+      useSeasonStore.getState().startSeason()
+      setPhase('hq')
     }
   }
 
@@ -93,7 +95,7 @@ export function TeamSelect() {
         onClick={handleStart}
         className="px-8 py-4"
       >
-        START WEEKEND
+        START SEASON
       </PixelButton>
     </div>
   )
