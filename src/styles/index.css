@@ -3,13 +3,18 @@
 
 @theme {
   --font-pixel: 'Press Start 2P', monospace;
-  --color-f1-bg: #0f172a;
-  --color-f1-border: #334155;
+
+  /* Broadcast palette */
+  --color-f1-bg: #0a0a0f;
+  --color-f1-surface: #1a1a24;
+  --color-f1-border: #2a2a38;
   --color-f1-text: #e2e8f0;
-  --color-f1-accent: #06b6d4;
-  --color-f1-danger: #ef4444;
-  --color-f1-success: #22c55e;
-  --color-f1-warning: #eab308;
+
+  /* Broadcast accents */
+  --color-f1-accent: #47c7fc;
+  --color-f1-danger: #ff2a6d;
+  --color-f1-success: #00ff41;
+  --color-f1-warning: #ffd700;
 }
 
 body {
