@@ -5,6 +5,7 @@ import { teams } from '../data/teams'
 import { drivers } from '../data/drivers'
 import { tracks } from '../data/tracks'
 import { PixelButton } from '../components/PixelButton'
+import { BroadcastTimingTower, type TimingEntry } from '../components/BroadcastTimingTower'
 import { formatLapTime } from '../utils/formatTime'
 import {
   simulateQualifying,
@@ -27,45 +28,47 @@ const SQ_SESSIONS: SQSession[] = [
   { name: 'SQ3', label: 'SPRINT SHOOTOUT 3', totalDrivers: 10, eliminatedCount: 0 },
 ]
 
+const RISK_COLORS = {
+  safe: '#00ff41',
+  push: '#ffd700',
+  'full-send': '#ff2a6d',
+} as const
+
 const MODE_OPTIONS: {
   mode: QualifyingMode
   label: string
   sublabel: string
-  emoji: string
   pace: string
   error: string
   color: string
-  borderColor: string
+  riskColor: string
 }[] = [
   {
     mode: 'safe',
     label: 'SAFE',
     sublabel: '',
-    emoji: '🟢',
     pace: '90% pace',
     error: '2% error',
     color: 'text-f1-success',
-    borderColor: 'border-f1-success/60 hover:border-f1-success',
+    riskColor: RISK_COLORS.safe,
   },
   {
     mode: 'push',
     label: 'PUSH',
     sublabel: '',
-    emoji: '🟡',
     pace: '100% pace',
     error: '15% error',
     color: 'text-f1-warning',
-    borderColor: 'border-f1-warning/60 hover:border-f1-warning',
+    riskColor: RISK_COLORS.push,
   },
   {
     mode: 'full-send',
     label: 'FULL',
     sublabel: 'SEND',
-    emoji: '🔴',
     pace: '105% pace',
     error: '35% error',
     color: 'text-f1-danger',
-    borderColor: 'border-f1-danger/60 hover:border-f1-danger',
+    riskColor: RISK_COLORS['full-send'],
   },
 ]
 
@@ -187,105 +190,120 @@ export function SprintShootout() {
     setPhase('sprint-race')
   }
 
+  const weatherLabel =
+    weather === 'dry' ? 'DRY' : weather === 'light-rain' ? 'LIGHT RAIN' : 'HEAVY RAIN'
+
   return (
-    <div className="min-h-screen bg-f1-bg px-4 py-8 flex flex-col items-center">
-      {/* Sprint Shootout Header */}
-      <div className="text-center mb-4">
-        <p className="font-pixel text-[9px] text-f1-warning tracking-widest">SPRINT WEEKEND</p>
-      </div>
-
-      {/* SQ Session Indicators */}
-      <div className="flex gap-3 mb-6">
-        {SQ_SESSIONS.map((sq, i) => (
-          <div
-            key={sq.name}
-            className={`font-pixel text-[10px] px-3 py-1 border rounded-sm ${
-              i < sqIndex
-                ? 'border-f1-success/50 text-f1-success bg-f1-success/10'
-                : i === sqIndex
-                  ? 'border-f1-warning text-f1-warning bg-f1-warning/10'
-                  : 'border-f1-border text-f1-text/30'
-            }`}
-          >
-            {sq.name} {i < sqIndex ? '\u2713' : i === sqIndex ? '\u25CF' : '\u25CB'}
+    <div className="min-h-screen bg-f1-bg flex flex-col">
+      {/* Header */}
+      <div className="bg-f1-surface border-b border-f1-border px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <span className="bg-f1-warning text-black font-pixel text-[7px] px-1.5 py-0.5 rounded-sm">
+            SPRINT
+          </span>
+          <span className="font-pixel text-f1-accent text-sm">{currentSQ.name}</span>
+          <span className="font-pixel text-[9px] text-f1-text/50">{track.name}</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="font-pixel text-[9px] text-f1-text/40">{weatherLabel}</span>
+          {/* SQ Session Indicators */}
+          <div className="flex gap-2">
+            {SQ_SESSIONS.map((sq, i) => (
+              <div
+                key={sq.name}
+                className={`font-pixel text-[8px] px-2 py-0.5 border rounded-sm ${
+                  i < sqIndex
+                    ? 'border-f1-success/50 text-f1-success bg-f1-success/10'
+                    : i === sqIndex
+                      ? 'border-f1-accent text-f1-accent bg-f1-accent/10'
+                      : 'border-f1-border text-f1-text/30'
+                }`}
+              >
+                {sq.name}
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
 
-      <AnimatePresence mode="wait">
-        {internalPhase === 'mode-select' && !playerEliminated && (
-          <motion.div
-            key={`mode-${sqIndex}`}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="flex flex-col items-center w-full"
-          >
-            <ModeSelectPhase
-              onSelect={handleModeSelect}
-              trackName={track.name}
-              sessionName={currentSQ.name}
-              sessionLabel={currentSQ.label}
-              driversCount={activeDrivers.length}
-              eliminatedCount={currentSQ.eliminatedCount}
-            />
-          </motion.div>
-        )}
+      {/* Main content */}
+      <div className="flex-1 px-4 py-8 flex flex-col items-center">
+        <AnimatePresence mode="wait">
+          {internalPhase === 'mode-select' && !playerEliminated && (
+            <motion.div
+              key={`mode-${sqIndex}`}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="flex flex-col items-center w-full"
+            >
+              <ModeSelectPhase
+                onSelect={handleModeSelect}
+                trackName={track.name}
+                sessionName={currentSQ.name}
+                sessionLabel={currentSQ.label}
+                driversCount={activeDrivers.length}
+                eliminatedCount={currentSQ.eliminatedCount}
+              />
+            </motion.div>
+          )}
 
-        {internalPhase === 'mode-select' && playerEliminated && (
-          <motion.div
-            key="eliminated"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col items-center"
-          >
-            <h1 className="font-pixel text-xl text-f1-danger mb-2">
-              ELIMINATED IN {SQ_SESSIONS[sqIndex - 1]?.name}
-            </h1>
-            <p className="font-pixel text-[10px] text-f1-text/50 mb-6">
-              Your sprint shootout is over. Remaining sessions will be simulated.
-            </p>
-            <PixelButton variant="warning" onClick={handleSkipToEnd}>
-              SIMULATE REMAINING & PROCEED
-            </PixelButton>
-          </motion.div>
-        )}
+          {internalPhase === 'mode-select' && playerEliminated && (
+            <motion.div
+              key="eliminated"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col items-center"
+            >
+              <h1 className="font-pixel text-xl text-f1-danger mb-2">
+                ELIMINATED IN {SQ_SESSIONS[sqIndex - 1]?.name}
+              </h1>
+              <p className="font-pixel text-[10px] text-f1-text/50 mb-6">
+                Your sprint shootout is over. Remaining sessions will be simulated.
+              </p>
+              <PixelButton variant="warning" onClick={handleSkipToEnd}>
+                SIMULATE REMAINING & PROCEED
+              </PixelButton>
+            </motion.div>
+          )}
 
-        {internalPhase === 'lap-animation' && playerResult && (
-          <motion.div
-            key={`lap-${sqIndex}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex flex-col items-center w-full"
-          >
-            <LapAnimationPhase
-              playerResult={playerResult}
-              sessionName={currentSQ.name}
-              onComplete={handleAnimationComplete}
-            />
-          </motion.div>
-        )}
+          {internalPhase === 'lap-animation' && playerResult && (
+            <motion.div
+              key={`lap-${sqIndex}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center w-full"
+            >
+              <LapAnimationPhase
+                playerResult={playerResult}
+                sessionResults={sessionResults}
+                sessionName={currentSQ.name}
+                onComplete={handleAnimationComplete}
+              />
+            </motion.div>
+          )}
 
-        {internalPhase === 'results' && (
-          <motion.div
-            key={`results-${sqIndex}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex flex-col items-center w-full"
-          >
-            <ResultsPhase
-              results={sessionResults}
-              playerDriverId={selectedDriverId!}
-              sessionName={currentSQ.name}
-              eliminatedCount={currentSQ.eliminatedCount}
-              isLastSession={isLastSession}
-              onNext={isLastSession ? handleFinish : handleNextSession}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+          {internalPhase === 'results' && (
+            <motion.div
+              key={`results-${sqIndex}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center w-full"
+            >
+              <ResultsPhase
+                results={sessionResults}
+                playerDriverId={selectedDriverId!}
+                sessionName={currentSQ.name}
+                eliminatedCount={currentSQ.eliminatedCount}
+                isLastSession={isLastSession}
+                onNext={isLastSession ? handleFinish : handleNextSession}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   )
 }
@@ -294,7 +312,6 @@ export function SprintShootout() {
 
 function ModeSelectPhase({
   onSelect,
-  trackName,
   sessionName,
   sessionLabel,
   driversCount,
@@ -307,42 +324,54 @@ function ModeSelectPhase({
   driversCount: number
   eliminatedCount: number
 }) {
+  const [hoveredMode, setHoveredMode] = useState<QualifyingMode | null>(null)
+
   return (
     <>
       <div className="text-center mb-8">
-        <h1 className="font-pixel text-2xl text-f1-warning mb-1">{sessionName}</h1>
+        <h1 className="font-pixel text-2xl text-f1-accent mb-1">{sessionName}</h1>
         <p className="font-pixel text-[10px] text-f1-text/60 mb-1">{sessionLabel}</p>
-        <p className="font-pixel text-[10px] text-f1-text/40 mb-1">{trackName}</p>
         <p className="font-pixel text-[9px] text-f1-text/30">
           {driversCount} DRIVERS
           {eliminatedCount > 0
-            ? ` \u2014 BOTTOM ${eliminatedCount} ELIMINATED`
-            : ' \u2014 SPRINT POLE SHOOTOUT'}
+            ? ` — BOTTOM ${eliminatedCount} ELIMINATED`
+            : ' — SPRINT POLE SHOOTOUT'}
         </p>
       </div>
 
       <p className="font-pixel text-[10px] text-f1-text/40 mb-4">Choose Your Approach</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-2xl">
-        {MODE_OPTIONS.map((opt) => (
-          <button
-            key={opt.mode}
-            onClick={() => onSelect(opt.mode)}
-            className={`bg-slate-800/60 border-2 ${opt.borderColor} rounded-sm p-6 flex flex-col items-center gap-3 transition-colors hover:bg-slate-700/60 cursor-pointer`}
-          >
-            <span className="text-2xl">{opt.emoji}</span>
-            <div className="text-center">
-              <span className={`font-pixel text-sm ${opt.color}`}>{opt.label}</span>
-              {opt.sublabel && (
-                <span className={`font-pixel text-sm ${opt.color} block`}>{opt.sublabel}</span>
-              )}
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <span className="font-pixel text-[9px] text-f1-text/60">{opt.pace}</span>
-              <span className="font-pixel text-[9px] text-f1-text/40">{opt.error}</span>
-            </div>
-          </button>
-        ))}
+        {MODE_OPTIONS.map((opt) => {
+          const isHovered = hoveredMode === opt.mode
+          return (
+            <button
+              key={opt.mode}
+              onClick={() => onSelect(opt.mode)}
+              onMouseEnter={() => setHoveredMode(opt.mode)}
+              onMouseLeave={() => setHoveredMode(null)}
+              className="bg-f1-surface border border-f1-border rounded-sm p-6 flex flex-col items-center gap-3 transition-all cursor-pointer border-l-[3px]!"
+              style={{
+                borderLeftColor: opt.riskColor,
+                boxShadow: isHovered
+                  ? `inset 0 0 30px ${opt.riskColor}15, 0 0 12px ${opt.riskColor}20`
+                  : undefined,
+                backgroundColor: isHovered ? `${opt.riskColor}08` : undefined,
+              }}
+            >
+              <div className="text-center">
+                <span className={`font-pixel text-sm ${opt.color}`}>{opt.label}</span>
+                {opt.sublabel && (
+                  <span className={`font-pixel text-sm ${opt.color} block`}>{opt.sublabel}</span>
+                )}
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <span className="font-pixel text-[9px] text-f1-text/60">{opt.pace}</span>
+                <span className="font-pixel text-[9px] text-f1-text/40">{opt.error}</span>
+              </div>
+            </button>
+          )
+        })}
       </div>
     </>
   )
@@ -350,16 +379,50 @@ function ModeSelectPhase({
 
 /* --- Phase B: Lap Animation --- */
 
-const SECTOR_DURATIONS = [1.2, 1.2, 1.5]
+const SECTOR_DURATIONS = [1.5, 1.5, 2.0]
 const SECTOR_LABELS = ['S1', 'S2', 'S3']
-const SECTOR_COLORS = ['#22c55e', '#eab308', '#a855f7']
+
+/** Determine sector color based on context:
+ *  Purple (#a855f7): session best
+ *  Green (#00ff41): personal best
+ *  Yellow (#ffd700): slower than personal best */
+function getSectorColor(
+  sectorIndex: number,
+  playerResult: QualifyingResult,
+  sessionResults: QualifyingResult[],
+): string {
+  const playerTime = playerResult.time
+  const bestTime = Math.min(...sessionResults.map((r) => r.time))
+
+  const isSessionBest = playerTime <= bestTime * 1.001
+  const hasError = playerResult.error
+
+  if (hasError) {
+    if (sectorIndex >= 1) return '#ffd700'
+    return '#00ff41'
+  }
+
+  if (isSessionBest) {
+    if (sectorIndex === 2) return '#a855f7'
+    return '#00ff41'
+  }
+
+  const isClose = playerTime <= bestTime * 1.005
+  if (isClose) {
+    return '#00ff41'
+  }
+
+  return '#ffd700'
+}
 
 function LapAnimationPhase({
   playerResult,
+  sessionResults,
   sessionName,
   onComplete,
 }: {
   playerResult: QualifyingResult
+  sessionResults: QualifyingResult[]
   sessionName: string
   onComplete: () => void
 }) {
@@ -389,7 +452,7 @@ function LapAnimationPhase({
     timers.push(
       setTimeout(() => {
         onComplete()
-      }, totalDuration + 1500),
+      }, totalDuration + 2000),
     )
 
     return () => timers.forEach(clearTimeout)
@@ -398,7 +461,7 @@ function LapAnimationPhase({
   return (
     <>
       <div className="text-center mb-8">
-        <h1 className="font-pixel text-xl text-f1-warning mb-1">{sessionName} -- HOT LAP</h1>
+        <h1 className="font-pixel text-xl text-f1-accent mb-1">{sessionName} — HOT LAP</h1>
         <p className="font-pixel text-[10px] text-f1-text/40">
           {playerResult.error ? 'MISTAKE DETECTED!' : 'PUSHING THE LIMITS...'}
         </p>
@@ -408,14 +471,20 @@ function LapAnimationPhase({
         {SECTOR_DURATIONS.map((duration, i) => {
           const isFilling = activeSector === i
           const isFilled = activeSector > i
+          const sectorColor = getSectorColor(i, playerResult, sessionResults)
 
           return (
             <div key={i} className="flex items-center gap-3">
-              <span className="font-pixel text-[10px] text-f1-text/50 w-8">{SECTOR_LABELS[i]}</span>
-              <div className="flex-1 h-5 bg-slate-800 border border-f1-border rounded-sm overflow-hidden">
+              <span
+                className="font-pixel text-[10px] w-8"
+                style={{ color: isFilled ? sectorColor : 'rgba(255,255,255,0.3)' }}
+              >
+                {SECTOR_LABELS[i]}
+              </span>
+              <div className="flex-1 h-5 bg-f1-surface border border-f1-border rounded-sm overflow-hidden">
                 <motion.div
                   className="h-full"
-                  style={{ backgroundColor: SECTOR_COLORS[i] }}
+                  style={{ backgroundColor: sectorColor }}
                   initial={{ width: '0%' }}
                   animate={{
                     width: isFilled ? '100%' : isFilling ? '100%' : '0%',
@@ -423,6 +492,16 @@ function LapAnimationPhase({
                   transition={isFilling ? { duration, ease: 'easeInOut' } : { duration: 0 }}
                 />
               </div>
+              {isFilled && (
+                <motion.span
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="font-pixel text-[9px] w-12 text-right"
+                  style={{ color: sectorColor }}
+                >
+                  {sectorColor === '#a855f7' ? 'BEST' : sectorColor === '#00ff41' ? 'PB' : 'SLOW'}
+                </motion.span>
+              )}
             </div>
           )
         })}
@@ -437,14 +516,13 @@ function LapAnimationPhase({
         >
           <p className="font-pixel text-[10px] text-f1-text/50 mb-1">LAP TIME</p>
           <p
-            className={`font-pixel text-2xl ${
-              playerResult.error ? 'text-f1-danger' : 'text-f1-warning'
-            }`}
+            className={`font-pixel ${playerResult.error ? 'text-f1-danger' : 'text-f1-accent'}`}
+            style={{ fontSize: '24px' }}
           >
             {formatLapTime(playerResult.time)}
           </p>
           {playerResult.error && (
-            <p className="font-pixel text-[9px] text-f1-danger/70 mt-1">ERROR -- TIME PENALTY</p>
+            <p className="font-pixel text-[9px] text-f1-danger/70 mt-1">ERROR — TIME PENALTY</p>
           )}
         </motion.div>
       )}
@@ -452,7 +530,7 @@ function LapAnimationPhase({
   )
 }
 
-/* --- Phase C: Results Grid --- */
+/* --- Phase C: Results (BroadcastTimingTower) --- */
 
 function ResultsPhase({
   results,
@@ -469,86 +547,46 @@ function ResultsPhase({
   isLastSession: boolean
   onNext: () => void
 }) {
-  const driverMap = new Map(drivers.map((d) => [d.id, d]))
-  const teamMap = new Map(teams.map((t) => [t.id, t]))
   const playerPosition = results.find((r) => r.driverId === playerDriverId)?.position ?? 0
   const cutoffPosition = results.length - eliminatedCount
   const playerIsEliminated = playerPosition > cutoffPosition && eliminatedCount > 0
 
+  // Build TimingEntry[] from results
+  const bestTime = Math.min(...results.map((r) => r.time))
+  const timingEntries: TimingEntry[] = results.map((result) => {
+    const isEliminated = eliminatedCount > 0 && result.position > cutoffPosition
+    const gap = result.time - bestTime
+    const value = result.position === 1 ? formatLapTime(result.time) : `+${gap.toFixed(3)}`
+
+    return {
+      driverId: result.driverId,
+      teamId: result.teamId,
+      position: result.position,
+      value,
+      status: isEliminated ? ('eliminated' as const) : undefined,
+      inactive: isEliminated,
+    }
+  })
+
   return (
     <>
       <div className="text-center mb-6">
-        <h1 className="font-pixel text-xl text-f1-warning mb-1">{sessionName} RESULTS</h1>
+        <h1 className="font-pixel text-xl text-f1-accent mb-1">{sessionName} RESULTS</h1>
         {eliminatedCount > 0 && (
           <p className="font-pixel text-[9px] text-f1-text/40">
-            TOP {cutoffPosition} ADVANCE -- BOTTOM {eliminatedCount} ELIMINATED
+            TOP {cutoffPosition} ADVANCE — BOTTOM {eliminatedCount} ELIMINATED
           </p>
         )}
       </div>
 
-      <div className="w-full max-w-xl flex flex-col gap-0.5 mb-6">
-        {results.map((result) => {
-          const driver = driverMap.get(result.driverId)
-          const team = teamMap.get(result.teamId)
-          if (!driver || !team) return null
-
-          const isPlayer = result.driverId === playerDriverId
-          const isEliminated = eliminatedCount > 0 && result.position > cutoffPosition
-
-          return (
-            <motion.div
-              key={result.driverId}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: result.position * 0.04 }}
-              className={`flex items-center gap-2 px-2 py-1.5 rounded-sm font-pixel text-[10px] ${
-                isPlayer
-                  ? 'bg-slate-700/80 border-l-2'
-                  : isEliminated
-                    ? 'bg-red-950/30'
-                    : 'bg-slate-800/40'
-              }`}
-              style={isPlayer ? { borderLeftColor: team.primaryColor } : undefined}
-            >
-              <span
-                className={`w-8 text-right ${isEliminated ? 'text-f1-danger/50' : 'text-f1-text/50'}`}
-              >
-                P{result.position}
-              </span>
-              <div
-                className={`w-1.5 h-4 rounded-sm shrink-0 ${isEliminated ? 'opacity-30' : ''}`}
-                style={{ backgroundColor: team.primaryColor }}
-              />
-              <span
-                className={`w-10 ${
-                  isPlayer ? 'text-f1-warning' : isEliminated ? 'text-f1-text/30' : 'text-f1-text'
-                }`}
-              >
-                {driver.shortName}
-              </span>
-              <span
-                className={`flex-1 truncate ${isEliminated ? 'text-f1-text/20' : 'text-f1-text/50'}`}
-              >
-                {team.name}
-              </span>
-              <span
-                className={`w-24 text-right ${
-                  result.error
-                    ? 'text-f1-danger/70'
-                    : isEliminated
-                      ? 'text-f1-text/30'
-                      : 'text-f1-text/70'
-                }`}
-              >
-                {formatLapTime(result.time)}
-              </span>
-              {isPlayer && <span className="text-f1-warning text-[8px] ml-1">YOU</span>}
-              {isEliminated && !isPlayer && (
-                <span className="text-f1-danger/50 text-[8px] ml-1">OUT</span>
-              )}
-            </motion.div>
-          )
-        })}
+      <div className="w-full max-w-xl mb-6">
+        <BroadcastTimingTower
+          entries={timingEntries}
+          drivers={drivers}
+          teams={teams}
+          playerDriverId={playerDriverId}
+          layoutId={`sprint-shootout-${sessionName}`}
+        />
       </div>
 
       {/* Player position summary */}
@@ -565,18 +603,24 @@ function ResultsPhase({
                 ? 'SPRINT GRID POSITION'
                 : `ADVANCING TO ${SQ_SESSIONS[Math.min(results.length - 1, 2)]?.name || 'NEXT'}`}
             </p>
-            <p className="font-pixel text-2xl text-f1-warning">P{playerPosition}</p>
+            <p className="font-pixel text-2xl text-f1-accent">P{playerPosition}</p>
           </>
         )}
       </div>
 
-      <PixelButton variant="success" onClick={onNext} className="px-6">
-        {isLastSession
-          ? 'PROCEED TO SPRINT RACE'
-          : playerIsEliminated
-            ? 'SIMULATE REMAINING & PROCEED'
-            : `CONTINUE TO ${SQ_SESSIONS[Math.min(results.length, 2)]?.name || 'NEXT'}`}
-      </PixelButton>
+      {/* Sticky bottom bar */}
+      <div className="sticky bottom-0 bg-f1-surface/95 backdrop-blur border-t border-f1-border px-4 py-3 flex items-center justify-between w-full max-w-xl rounded-sm">
+        <div className="font-pixel text-[9px] text-f1-text/50">
+          {eliminatedCount > 0 ? `ELIMINATION ZONE: P${cutoffPosition + 1}+` : 'FINAL SESSION'}
+        </div>
+        <PixelButton variant="success" onClick={onNext} className="px-6">
+          {isLastSession
+            ? 'PROCEED TO SPRINT RACE'
+            : playerIsEliminated
+              ? 'SIMULATE & PROCEED'
+              : `CONTINUE TO ${SQ_SESSIONS[Math.min(results.length, 2)]?.name || 'NEXT'}`}
+        </PixelButton>
+      </div>
     </>
   )
 }
