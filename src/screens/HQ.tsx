@@ -9,6 +9,8 @@ import { teams } from '../data/teams'
 import { drivers } from '../data/drivers'
 import { COMPONENT_REPLACEMENT_COSTS } from '../engine/seasonEngine'
 import { PixelButton } from '../components/PixelButton'
+import { BroadcastTimingTower, type TimingEntry } from '../components/BroadcastTimingTower'
+import { TrackMiniMap } from '../components/TrackMiniMap'
 import { formatMoney } from '../utils/formatMoney'
 import type { RDArea, RDBranch, ComponentType, SponsorObjective } from '../data/types'
 
@@ -50,6 +52,12 @@ const CRITICAL_THRESHOLDS: Record<ComponentType, number> = {
   'energy-recovery': 15,
 }
 
+function getHealthColor(percent: number): string {
+  if (percent > 60) return '#00ff41'
+  if (percent > 30) return '#ffd700'
+  return '#ff2a6d'
+}
+
 type TabId = 'rd' | 'components' | 'sponsors' | 'standings' | 'next-race'
 
 const TABS: { id: TabId; label: string }[] = [
@@ -57,7 +65,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'components', label: 'COMP' },
   { id: 'sponsors', label: 'SPON' },
   { id: 'standings', label: 'STAND' },
-  { id: 'next-race', label: 'NEXT RACE' },
+  { id: 'next-race', label: 'NEXT' },
 ]
 
 // ---------------------------------------------------------------------------
@@ -70,64 +78,138 @@ export function HQ() {
   const currentRaceIndex = useSeasonStore((s) => s.currentRaceIndex)
   const budget = useSeasonStore((s) => s.budget)
   const researchPoints = useSeasonStore((s) => s.researchPoints)
+  const selectedTeamId = useWeekendStore((s) => s.selectedTeamId)
 
+  const team = teams.find((t) => t.id === selectedTeamId)
   const race = calendar[currentRaceIndex]
+  const track = tracks.find((t) => t.id === race.trackId)
+
+  const teamColor = team?.primaryColor ?? '#47c7fc'
 
   return (
-    <div className="min-h-screen bg-f1-bg px-4 py-6 flex flex-col items-center">
-      {/* Header */}
-      <div className="w-full max-w-2xl mb-4">
-        <h1 className="font-pixel text-lg text-f1-accent mb-1">HQ — RACE {race.round}/24</h1>
-        <p className="font-pixel text-[10px] text-f1-text/70 mb-2">{race.gpName}</p>
-        <div className="flex gap-4">
-          <span className="font-pixel text-[10px] text-f1-text">
-            Budget:{' '}
-            <span className={budget < 0 ? 'text-f1-danger' : 'text-f1-success'}>
-              {formatMoney(budget)}
+    <div className="min-h-screen bg-f1-bg flex flex-col">
+      {/* Sticky Header Bar */}
+      <div
+        className="sticky top-0 z-10 bg-f1-surface border-b-2 px-4 py-3"
+        style={{ borderBottomColor: teamColor }}
+      >
+        <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
+          {/* Left: Team badge + name + engine */}
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: teamColor }} />
+            <div className="min-w-0">
+              <span className="font-pixel text-[10px] text-f1-text truncate block">
+                {team?.name ?? 'Unknown'}
+              </span>
+              <span className="font-pixel text-[7px] text-f1-text/40">{team?.engine ?? ''}</span>
+            </div>
+          </div>
+
+          {/* Center: Race counter + track name */}
+          <div className="text-center hidden sm:block">
+            <span className="font-pixel text-[10px] text-f1-accent">RACE {race.round}/24</span>
+            <span className="font-pixel text-[7px] text-f1-text/50 block">
+              {track?.circuit ?? race.gpName}
             </span>
-          </span>
-          <span className="font-pixel text-[10px] text-f1-text">
-            RP: <span className="text-f1-accent">{researchPoints}</span>
-          </span>
+          </div>
+
+          {/* Right: Budget + RP */}
+          <div className="text-right shrink-0">
+            <span className="font-pixel text-[9px] block">
+              <span className={budget < 0 ? 'text-f1-danger' : 'text-f1-success'}>
+                {formatMoney(budget)}
+              </span>
+            </span>
+            <span className="font-pixel text-[8px] text-f1-text/50">
+              RP: <span className="text-f1-accent">{researchPoints}</span>
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-2 mb-6 flex-wrap justify-center">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`font-pixel text-[10px] px-3 py-1 border rounded-sm transition-colors ${
-              activeTab === tab.id
-                ? 'border-f1-accent text-f1-accent bg-f1-accent/10'
-                : 'border-f1-border text-f1-text/30 hover:text-f1-text/60 hover:border-f1-border'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="bg-f1-surface/80 border-b border-f1-border">
+        <div className="max-w-2xl mx-auto flex">
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab.id
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`font-pixel text-[9px] px-4 py-2.5 transition-colors border-b-2 ${
+                  isActive
+                    ? 'text-f1-text'
+                    : 'text-f1-text/40 hover:text-f1-text/60 border-transparent'
+                }`}
+                style={isActive ? { borderBottomColor: teamColor } : undefined}
+              >
+                {tab.label}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* Tab content */}
-      <div className="w-full max-w-2xl flex-1">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-          >
-            {activeTab === 'rd' && <RDTab />}
-            {activeTab === 'components' && <ComponentsTab />}
-            {activeTab === 'sponsors' && <SponsorsTab />}
-            {activeTab === 'standings' && <StandingsTab />}
-            {activeTab === 'next-race' && <NextRaceTab />}
-          </motion.div>
-        </AnimatePresence>
+      <div className="flex-1 px-4 py-4 pb-20">
+        <div className="max-w-2xl mx-auto">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              {activeTab === 'rd' && <RDTab teamColor={teamColor} />}
+              {activeTab === 'components' && <ComponentsTab />}
+              {activeTab === 'sponsors' && <SponsorsTab />}
+              {activeTab === 'standings' && <StandingsTab />}
+              {activeTab === 'next-race' && <NextRaceTab teamColor={teamColor} />}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Sticky Bottom Bar */}
+      <div className="sticky bottom-0 z-10 bg-f1-surface border-t border-f1-border px-4 py-3">
+        <div className="max-w-2xl mx-auto flex justify-center">
+          <StartRaceButton teamColor={teamColor} />
+        </div>
       </div>
     </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Start Race Button (bottom bar)
+// ---------------------------------------------------------------------------
+
+function StartRaceButton({ teamColor }: { teamColor: string }) {
+  const currentRaceIndex = useSeasonStore((s) => s.currentRaceIndex)
+  const resetWeekend = useWeekendStore((s) => s.resetWeekend)
+
+  const race = calendar[currentRaceIndex]
+  const track = tracks.find((t) => t.id === race.trackId)
+
+  const handleStart = () => {
+    if (!track) return
+    resetWeekend()
+    useWeekendStore.setState({
+      currentTrackId: track.id,
+      isSprint: track.hasSprint,
+      phase: 'practice',
+    })
+  }
+
+  return (
+    <button
+      onClick={handleStart}
+      className="font-pixel text-[10px] text-white px-6 py-2.5 rounded-sm transition-opacity hover:opacity-90 active:opacity-75"
+      style={{ backgroundColor: teamColor }}
+    >
+      START RACE WEEKEND
+    </button>
   )
 }
 
@@ -135,7 +217,7 @@ export function HQ() {
 // Tab 1: R&D
 // ---------------------------------------------------------------------------
 
-function RDTab() {
+function RDTab({ teamColor }: { teamColor: string }) {
   const rdUpgrades = useSeasonStore((s) => s.rdUpgrades)
   const budget = useSeasonStore((s) => s.budget)
   const researchPoints = useSeasonStore((s) => s.researchPoints)
@@ -172,7 +254,7 @@ function RDTab() {
           researchPoints >= branchB.costRP
 
         return (
-          <div key={area} className="border border-f1-border rounded-sm p-3">
+          <div key={area} className="bg-f1-surface border border-f1-border rounded-sm p-3">
             <h3 className="font-pixel text-[11px] text-f1-accent mb-3">{RD_AREA_LABELS[area]}</h3>
 
             {/* Base upgrade */}
@@ -181,9 +263,10 @@ function RDTab() {
                 baseUnlocked
                   ? 'border-f1-success/60 bg-f1-success/5'
                   : canAffordBase
-                    ? 'border-f1-accent/60 bg-f1-accent/5'
-                    : 'border-f1-border bg-slate-800/40'
+                    ? 'bg-f1-surface/50'
+                    : 'border-f1-border bg-f1-surface/30 opacity-50'
               }`}
+              style={!baseUnlocked && canAffordBase ? { borderColor: teamColor } : undefined}
             >
               <div className="flex items-center justify-between mb-1">
                 <span className="font-pixel text-[10px] text-f1-text">{baseNode.name}</span>
@@ -208,6 +291,11 @@ function RDTab() {
               )}
             </div>
 
+            {/* CSS connector line */}
+            <div className="flex justify-center mb-3">
+              <div className="w-px h-4 bg-f1-border" />
+            </div>
+
             {/* Branch options */}
             <div className="grid grid-cols-2 gap-2">
               {[
@@ -225,11 +313,16 @@ function RDTab() {
                       isSelected
                         ? 'border-f1-success/60 bg-f1-success/5'
                         : isLocked || isOtherSelected
-                          ? 'border-f1-border/30 bg-slate-800/20 opacity-40'
+                          ? 'border-f1-border/30 bg-f1-surface/20 opacity-50'
                           : canAfford
-                            ? 'border-f1-accent/60 bg-f1-accent/5'
-                            : 'border-f1-border bg-slate-800/40'
+                            ? 'bg-f1-surface/50'
+                            : 'border-f1-border bg-f1-surface/30'
                     }`}
+                    style={
+                      !isSelected && !isLocked && !isOtherSelected && canAfford
+                        ? { borderColor: teamColor }
+                        : undefined
+                    }
                   >
                     <span className="font-pixel text-[10px] text-f1-text block mb-1">
                       {node.name}
@@ -279,20 +372,22 @@ function ComponentsTab() {
         const canAfford = budget >= cost
         const threshold = CRITICAL_THRESHOLDS[comp.type]
         const isCritical = comp.healthPercent < threshold
-
-        const healthColor =
-          comp.healthPercent > 50
-            ? 'bg-f1-success'
-            : comp.healthPercent > 20
-              ? 'bg-f1-warning'
-              : 'bg-f1-danger'
+        const isLow = comp.healthPercent < 30
 
         return (
           <div
             key={comp.type}
-            className={`border rounded-sm p-3 ${
+            className={`bg-f1-surface border rounded-sm p-3 ${
               isCritical ? 'border-f1-danger/60' : 'border-f1-border'
-            }`}
+            } ${isLow ? 'animate-pulse-border' : ''}`}
+            style={
+              isLow
+                ? {
+                    animation: 'pulse-border 2s ease-in-out infinite',
+                    borderColor: '#ff2a6d',
+                  }
+                : undefined
+            }
           >
             <div className="flex items-center justify-between mb-2">
               <span className="font-pixel text-[11px] text-f1-text">
@@ -308,10 +403,13 @@ function ComponentsTab() {
             </div>
 
             {/* Health bar */}
-            <div className="w-full h-3 bg-slate-800 border border-f1-border rounded-sm overflow-hidden mb-2">
+            <div className="w-full h-3 bg-f1-bg border border-f1-border rounded-sm overflow-hidden mb-2">
               <div
-                className={`h-full transition-all ${healthColor}`}
-                style={{ width: `${comp.healthPercent}%` }}
+                className="h-full transition-all"
+                style={{
+                  width: `${comp.healthPercent}%`,
+                  backgroundColor: getHealthColor(comp.healthPercent),
+                }}
               />
             </div>
 
@@ -367,7 +465,7 @@ function SponsorsTab() {
           {activeSponsors.map((sponsor) => (
             <div
               key={sponsor.id}
-              className="border border-f1-success/30 rounded-sm p-2 flex items-center justify-between"
+              className="bg-f1-surface border border-f1-success/30 rounded-sm p-2 flex items-center justify-between"
             >
               <div>
                 <span className="font-pixel text-[10px] text-f1-text block">{sponsor.name}</span>
@@ -375,7 +473,7 @@ function SponsorsTab() {
                   {formatObjective(sponsor.objective)}
                 </span>
                 <div className="flex gap-3 mt-1">
-                  <span className="font-pixel text-[9px] text-f1-success">
+                  <span className="font-pixel text-[9px] text-f1-warning">
                     {formatMoney(sponsor.payout)}/race
                   </span>
                   <span className="font-pixel text-[9px] text-f1-text/40">
@@ -405,7 +503,7 @@ function SponsorsTab() {
           {availableSponsors.map((sponsor) => (
             <div
               key={sponsor.id}
-              className="border border-f1-border rounded-sm p-2 flex items-center justify-between"
+              className="bg-f1-surface border border-f1-border rounded-sm p-2 flex items-center justify-between"
             >
               <div>
                 <span className="font-pixel text-[10px] text-f1-text block">{sponsor.name}</span>
@@ -413,7 +511,7 @@ function SponsorsTab() {
                   {formatObjective(sponsor.objective)}
                 </span>
                 <div className="flex gap-3 mt-1">
-                  <span className="font-pixel text-[9px] text-f1-accent">
+                  <span className="font-pixel text-[9px] text-f1-warning">
                     {formatMoney(sponsor.payout)}/race
                   </span>
                   <span className="font-pixel text-[9px] text-f1-text/40">
@@ -443,14 +541,35 @@ function SponsorsTab() {
 function StandingsTab() {
   const [view, setView] = useState<'drivers' | 'constructors'>('drivers')
 
-  const selectedTeamId = useWeekendStore((s) => s.selectedTeamId)
+  const selectedDriverId = useWeekendStore((s) => s.selectedDriverId)
   const driverStandings = useSeasonStore((s) => s.driverStandings)
   const teamStandings = useSeasonStore((s) => s.teamStandings)
 
-  const playerDriverIds = drivers.filter((d) => d.teamId === selectedTeamId).map((d) => d.id)
-
   const sortedDrivers = [...driverStandings].sort((a, b) => b.points - a.points)
   const sortedTeams = [...teamStandings].sort((a, b) => b.points - a.points)
+
+  // Build driver timing entries
+  const driverEntries: TimingEntry[] = sortedDrivers.map((ds, i) => {
+    const driver = drivers.find((d) => d.id === ds.driverId)
+    return {
+      driverId: ds.driverId,
+      teamId: driver?.teamId ?? '',
+      position: i + 1,
+      value: `${ds.points} pts`,
+    }
+  })
+
+  // Build constructor timing entries (use the team's first driver as driverId for the component key)
+  const constructorEntries: TimingEntry[] = sortedTeams.map((ts, i) => {
+    const teamDrivers = drivers.filter((d) => d.teamId === ts.teamId)
+    const firstDriver = teamDrivers[0]
+    return {
+      driverId: firstDriver?.id ?? ts.teamId,
+      teamId: ts.teamId,
+      position: i + 1,
+      value: `${ts.points} pts`,
+    }
+  })
 
   return (
     <div>
@@ -479,63 +598,21 @@ function StandingsTab() {
       </div>
 
       {view === 'drivers' ? (
-        <div className="space-y-1">
-          {sortedDrivers.map((ds, i) => {
-            const driver = drivers.find((d) => d.id === ds.driverId)
-            const team = teams.find((t) => t.id === driver?.teamId)
-            const isPlayer = playerDriverIds.includes(ds.driverId)
-
-            return (
-              <div
-                key={ds.driverId}
-                className={`flex items-center gap-2 px-2 py-1 rounded-sm ${
-                  isPlayer ? 'bg-f1-accent/10 border border-f1-accent/30' : ''
-                }`}
-              >
-                <span className="font-pixel text-[10px] text-f1-text/50 w-6 text-right">
-                  {i + 1}.
-                </span>
-                <div
-                  className="w-1 h-4 rounded-sm"
-                  style={{ backgroundColor: team?.primaryColor ?? '#666' }}
-                />
-                <span className="font-pixel text-[10px] text-f1-text flex-1">
-                  {driver?.shortName ?? '???'}{' '}
-                  <span className="text-f1-text/40">#{driver?.number}</span>
-                </span>
-                <span className="font-pixel text-[10px] text-f1-accent">{ds.points} pts</span>
-              </div>
-            )
-          })}
-        </div>
+        <BroadcastTimingTower
+          entries={driverEntries}
+          drivers={drivers}
+          teams={teams}
+          playerDriverId={selectedDriverId ?? ''}
+          layoutId="hq-driver-standings"
+        />
       ) : (
-        <div className="space-y-1">
-          {sortedTeams.map((ts, i) => {
-            const team = teams.find((t) => t.id === ts.teamId)
-            const isPlayer = ts.teamId === selectedTeamId
-
-            return (
-              <div
-                key={ts.teamId}
-                className={`flex items-center gap-2 px-2 py-1 rounded-sm ${
-                  isPlayer ? 'bg-f1-accent/10 border border-f1-accent/30' : ''
-                }`}
-              >
-                <span className="font-pixel text-[10px] text-f1-text/50 w-6 text-right">
-                  {i + 1}.
-                </span>
-                <div
-                  className="w-1 h-4 rounded-sm"
-                  style={{ backgroundColor: team?.primaryColor ?? '#666' }}
-                />
-                <span className="font-pixel text-[10px] text-f1-text flex-1">
-                  {team?.name ?? '???'}
-                </span>
-                <span className="font-pixel text-[10px] text-f1-accent">{ts.points} pts</span>
-              </div>
-            )
-          })}
-        </div>
+        <BroadcastTimingTower
+          entries={constructorEntries}
+          drivers={drivers}
+          teams={teams}
+          playerDriverId={selectedDriverId ?? ''}
+          layoutId="hq-constructor-standings"
+        />
       )}
     </div>
   )
@@ -545,27 +622,14 @@ function StandingsTab() {
 // Tab 5: Next Race
 // ---------------------------------------------------------------------------
 
-function NextRaceTab() {
+function NextRaceTab({ teamColor }: { teamColor: string }) {
   const currentRaceIndex = useSeasonStore((s) => s.currentRaceIndex)
-  const resetWeekend = useWeekendStore((s) => s.resetWeekend)
 
   const race = calendar[currentRaceIndex]
   const track = tracks.find((t) => t.id === race.trackId)
 
   if (!track) {
     return <p className="font-pixel text-[10px] text-f1-danger">Track not found for this race.</p>
-  }
-
-  const handleStart = () => {
-    resetWeekend()
-    // Use a single set call to avoid intermediate phase changes
-    // resetWeekend sets phase to 'hq', so we immediately override to 'practice'
-    // along with the track data in the same tick
-    useWeekendStore.setState({
-      currentTrackId: track.id,
-      isSprint: track.hasSprint,
-      phase: 'practice',
-    })
   }
 
   const typeLabel: Record<string, string> = {
@@ -595,8 +659,22 @@ function NextRaceTab() {
         </p>
       </div>
 
+      {/* Track Mini Map */}
+      <div
+        className="border border-f1-border rounded-sm p-4 bg-f1-surface flex items-center justify-center"
+        style={{ minHeight: 180 }}
+      >
+        <TrackMiniMap
+          trackId={track.id}
+          cars={[]}
+          teams={teams}
+          playerDriverId=""
+          className="max-h-40"
+        />
+      </div>
+
       {/* Track stats */}
-      <div className="border border-f1-border rounded-sm p-3 space-y-2">
+      <div className="bg-f1-surface border border-f1-border rounded-sm p-3 space-y-2">
         <div className="flex items-center justify-between">
           <span className="font-pixel text-[9px] text-f1-text/50">LAPS</span>
           <span className="font-pixel text-[10px] text-f1-text">{track.totalLaps}</span>
@@ -622,18 +700,14 @@ function NextRaceTab() {
         {track.hasSprint && (
           <div className="flex items-center justify-between">
             <span className="font-pixel text-[9px] text-f1-text/50">FORMAT</span>
-            <span className="font-pixel text-[9px] text-f1-warning border border-f1-warning/40 rounded-sm px-2 py-0.5">
+            <span
+              className="font-pixel text-[9px] border rounded-sm px-2 py-0.5"
+              style={{ color: teamColor, borderColor: `${teamColor}66` }}
+            >
               SPRINT WEEKEND
             </span>
           </div>
         )}
-      </div>
-
-      {/* Start button */}
-      <div className="text-center pt-2">
-        <PixelButton variant="success" onClick={handleStart}>
-          START RACE WEEKEND →
-        </PixelButton>
       </div>
     </div>
   )
