@@ -22,9 +22,12 @@ const COMPOUND_DISPLAY: Record<string, { label: string; color: string }> = {
 }
 
 export function Practice() {
-  const { setPracticeData, setPhase, weather } = useWeekendStore()
+  const { setPracticeData, setPhase, weather, isSprint } = useWeekendStore()
   const currentTrackId = useWeekendStore((s) => s.currentTrackId)
   const track = tracks.find((t) => t.id === currentTrackId) ?? tracks[0]
+
+  // Sprint weekends only have FP1
+  const sessions = isSprint ? FP_SESSIONS.filter((fp) => fp.name === 'FP1') : FP_SESSIONS
 
   const [fpIndex, setFpIndex] = useState(0)
   const [tick, setTick] = useState(0)
@@ -32,8 +35,8 @@ export function Practice() {
   const [sessionComplete, setSessionComplete] = useState(false)
   const [transitioning, setTransitioning] = useState(false)
 
-  const currentFP = FP_SESSIONS[fpIndex]
-  const isLastSession = fpIndex >= FP_SESSIONS.length - 1
+  const currentFP = sessions[fpIndex]
+  const isLastSession = fpIndex >= sessions.length - 1
   const allComplete = isLastSession && sessionComplete
 
   useEffect(() => {
@@ -59,7 +62,7 @@ export function Practice() {
 
   const sessionProgress = Math.min((tick / currentFP.ticks) * 100, 100)
   const overallProgress =
-    ((fpIndex + (sessionComplete ? 1 : tick / currentFP.ticks)) / FP_SESSIONS.length) * 100
+    ((fpIndex + (sessionComplete ? 1 : tick / currentFP.ticks)) / sessions.length) * 100
 
   const handleNextSession = useCallback(() => {
     setTransitioning(true)
@@ -82,10 +85,10 @@ export function Practice() {
   const handleContinue = useCallback(() => {
     setPracticeData({
       dataCollected: 100,
-      revealedCompounds: ['soft', 'medium', 'hard'],
+      revealedCompounds: isSprint ? ['soft'] : ['soft', 'medium', 'hard'],
     })
     setPhase('qualifying')
-  }, [setPracticeData, setPhase])
+  }, [setPracticeData, setPhase, isSprint])
 
   return (
     <div className="min-h-screen bg-f1-bg px-4 py-8 flex flex-col items-center">
@@ -144,7 +147,7 @@ export function Practice() {
 
       {/* FP Session Indicators */}
       <div className="flex gap-3 mb-6">
-        {FP_SESSIONS.map((fp, i) => (
+        {sessions.map((fp, i) => (
           <div
             key={fp.name}
             className={`font-pixel text-[10px] px-3 py-1 border rounded-sm ${
@@ -191,7 +194,7 @@ export function Practice() {
         )}
         {sessionComplete && !isLastSession && (
           <PixelButton variant="default" onClick={handleNextSession}>
-            NEXT → {FP_SESSIONS[fpIndex + 1].name}
+            NEXT → {sessions[fpIndex + 1].name}
           </PixelButton>
         )}
         {allComplete && (

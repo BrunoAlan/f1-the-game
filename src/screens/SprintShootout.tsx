@@ -14,17 +14,17 @@ import {
 
 type InternalPhase = 'mode-select' | 'lap-animation' | 'results'
 
-interface QSession {
+interface SQSession {
   name: string
   label: string
   totalDrivers: number
   eliminatedCount: number
 }
 
-const Q_SESSIONS: QSession[] = [
-  { name: 'Q1', label: 'QUALIFYING 1', totalDrivers: 22, eliminatedCount: 5 },
-  { name: 'Q2', label: 'QUALIFYING 2', totalDrivers: 17, eliminatedCount: 7 },
-  { name: 'Q3', label: 'QUALIFYING 3', totalDrivers: 10, eliminatedCount: 0 },
+const SQ_SESSIONS: SQSession[] = [
+  { name: 'SQ1', label: 'SPRINT SHOOTOUT 1', totalDrivers: 22, eliminatedCount: 5 },
+  { name: 'SQ2', label: 'SPRINT SHOOTOUT 2', totalDrivers: 17, eliminatedCount: 7 },
+  { name: 'SQ3', label: 'SPRINT SHOOTOUT 3', totalDrivers: 10, eliminatedCount: 0 },
 ]
 
 const MODE_OPTIONS: {
@@ -69,12 +69,12 @@ const MODE_OPTIONS: {
   },
 ]
 
-export function Qualifying() {
-  const { selectedDriverId, weather, setQualifyingGrid, setPhase, isSprint } = useWeekendStore()
+export function SprintShootout() {
+  const { selectedDriverId, weather, setSprintGrid, setPhase } = useWeekendStore()
   const currentTrackId = useWeekendStore((s) => s.currentTrackId)
   const track = tracks.find((t) => t.id === currentTrackId) ?? tracks[0]
 
-  const [qIndex, setQIndex] = useState(0)
+  const [sqIndex, setSqIndex] = useState(0)
   const [internalPhase, setInternalPhase] = useState<InternalPhase>('mode-select')
   const [sessionResults, setSessionResults] = useState<QualifyingResult[]>([])
   const [playerResult, setPlayerResult] = useState<QualifyingResult | null>(null)
@@ -83,8 +83,8 @@ export function Qualifying() {
     { driverId: string; position: number; time: number }[]
   >([])
 
-  const currentQ = Q_SESSIONS[qIndex]
-  const isLastSession = qIndex >= Q_SESSIONS.length - 1
+  const currentSQ = SQ_SESSIONS[sqIndex]
+  const isLastSession = sqIndex >= SQ_SESSIONS.length - 1
   const playerEliminated = eliminatedIds.has(selectedDriverId!)
 
   const activeDrivers = useMemo(
@@ -113,52 +113,46 @@ export function Qualifying() {
   }
 
   const handleNextSession = () => {
-    // Eliminate bottom drivers from this session
     const sorted = [...sessionResults].sort((a, b) => a.time - b.time)
-    const toEliminate = sorted.slice(sorted.length - currentQ.eliminatedCount)
+    const toEliminate = sorted.slice(sorted.length - currentSQ.eliminatedCount)
     const newEliminated = new Set(eliminatedIds)
     const newGridEntries: { driverId: string; position: number; time: number }[] = []
 
     toEliminate.forEach((r, i) => {
       newEliminated.add(r.driverId)
-      // Assign final grid positions for eliminated drivers
-      const gridPos = currentQ.totalDrivers - i
+      const gridPos = currentSQ.totalDrivers - i
       newGridEntries.push({ driverId: r.driverId, position: gridPos, time: r.time })
     })
 
     setEliminatedIds(newEliminated)
     setFinalGrid((prev) => [...prev, ...newGridEntries])
 
-    // Move to next Q session
-    setQIndex((prev) => prev + 1)
+    setSqIndex((prev) => prev + 1)
     setInternalPhase('mode-select')
     setSessionResults([])
     setPlayerResult(null)
   }
 
   const handleFinish = () => {
-    // Q3 results determine P1-P10
     const sorted = [...sessionResults].sort((a, b) => a.time - b.time)
-    const q3Grid = sorted.map((r, i) => ({
+    const sq3Grid = sorted.map((r, i) => ({
       driverId: r.driverId,
       position: i + 1,
       time: r.time,
     }))
 
-    const fullGrid = [...q3Grid, ...finalGrid].sort((a, b) => a.position - b.position)
-    setQualifyingGrid(fullGrid)
-    setPhase(isSprint ? 'sprint-shootout' : 'strategy')
+    const fullGrid = [...sq3Grid, ...finalGrid].sort((a, b) => a.position - b.position)
+    setSprintGrid(fullGrid)
+    setPhase('sprint-race')
   }
 
-  // If player is eliminated, skip mode select and auto-simulate remaining sessions
   const handleSkipToEnd = () => {
-    // Simulate remaining sessions without player
     let currentEliminated = new Set(eliminatedIds)
     let currentGrid = [...finalGrid]
     let remainingDrivers = drivers.filter((d) => !currentEliminated.has(d.id))
 
-    for (let i = qIndex; i < Q_SESSIONS.length; i++) {
-      const session = Q_SESSIONS[i]
+    for (let i = sqIndex; i < SQ_SESSIONS.length; i++) {
+      const session = SQ_SESSIONS[i]
       const simResults = simulateQualifying({
         teams,
         drivers: remainingDrivers,
@@ -182,7 +176,6 @@ export function Qualifying() {
         })
         remainingDrivers = drivers.filter((d) => !currentEliminated.has(d.id))
       } else {
-        // Q3 final
         sorted.forEach((r, j) => {
           currentGrid.push({ driverId: r.driverId, position: j + 1, time: r.time })
         })
@@ -190,26 +183,31 @@ export function Qualifying() {
     }
 
     const fullGrid = currentGrid.sort((a, b) => a.position - b.position)
-    setQualifyingGrid(fullGrid)
-    setPhase(isSprint ? 'sprint-shootout' : 'strategy')
+    setSprintGrid(fullGrid)
+    setPhase('sprint-race')
   }
 
   return (
     <div className="min-h-screen bg-f1-bg px-4 py-8 flex flex-col items-center">
-      {/* Q Session Indicators */}
+      {/* Sprint Shootout Header */}
+      <div className="text-center mb-4">
+        <p className="font-pixel text-[9px] text-f1-warning tracking-widest">SPRINT WEEKEND</p>
+      </div>
+
+      {/* SQ Session Indicators */}
       <div className="flex gap-3 mb-6">
-        {Q_SESSIONS.map((q, i) => (
+        {SQ_SESSIONS.map((sq, i) => (
           <div
-            key={q.name}
+            key={sq.name}
             className={`font-pixel text-[10px] px-3 py-1 border rounded-sm ${
-              i < qIndex
+              i < sqIndex
                 ? 'border-f1-success/50 text-f1-success bg-f1-success/10'
-                : i === qIndex
-                  ? 'border-f1-accent text-f1-accent bg-f1-accent/10'
+                : i === sqIndex
+                  ? 'border-f1-warning text-f1-warning bg-f1-warning/10'
                   : 'border-f1-border text-f1-text/30'
             }`}
           >
-            {q.name} {i < qIndex ? '✓' : i === qIndex ? '●' : '○'}
+            {sq.name} {i < sqIndex ? '\u2713' : i === sqIndex ? '\u25CF' : '\u25CB'}
           </div>
         ))}
       </div>
@@ -217,7 +215,7 @@ export function Qualifying() {
       <AnimatePresence mode="wait">
         {internalPhase === 'mode-select' && !playerEliminated && (
           <motion.div
-            key={`mode-${qIndex}`}
+            key={`mode-${sqIndex}`}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -226,10 +224,10 @@ export function Qualifying() {
             <ModeSelectPhase
               onSelect={handleModeSelect}
               trackName={track.name}
-              sessionName={currentQ.name}
-              sessionLabel={currentQ.label}
+              sessionName={currentSQ.name}
+              sessionLabel={currentSQ.label}
               driversCount={activeDrivers.length}
-              eliminatedCount={currentQ.eliminatedCount}
+              eliminatedCount={currentSQ.eliminatedCount}
             />
           </motion.div>
         )}
@@ -242,10 +240,10 @@ export function Qualifying() {
             className="flex flex-col items-center"
           >
             <h1 className="font-pixel text-xl text-f1-danger mb-2">
-              ELIMINATED IN {Q_SESSIONS[qIndex - 1]?.name}
+              ELIMINATED IN {SQ_SESSIONS[sqIndex - 1]?.name}
             </h1>
             <p className="font-pixel text-[10px] text-f1-text/50 mb-6">
-              Your qualifying session is over. Remaining sessions will be simulated.
+              Your sprint shootout is over. Remaining sessions will be simulated.
             </p>
             <PixelButton variant="warning" onClick={handleSkipToEnd}>
               SIMULATE REMAINING & PROCEED
@@ -255,7 +253,7 @@ export function Qualifying() {
 
         {internalPhase === 'lap-animation' && playerResult && (
           <motion.div
-            key={`lap-${qIndex}`}
+            key={`lap-${sqIndex}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -263,7 +261,7 @@ export function Qualifying() {
           >
             <LapAnimationPhase
               playerResult={playerResult}
-              sessionName={currentQ.name}
+              sessionName={currentSQ.name}
               onComplete={handleAnimationComplete}
             />
           </motion.div>
@@ -271,7 +269,7 @@ export function Qualifying() {
 
         {internalPhase === 'results' && (
           <motion.div
-            key={`results-${qIndex}`}
+            key={`results-${sqIndex}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -280,10 +278,9 @@ export function Qualifying() {
             <ResultsPhase
               results={sessionResults}
               playerDriverId={selectedDriverId!}
-              sessionName={currentQ.name}
-              eliminatedCount={currentQ.eliminatedCount}
+              sessionName={currentSQ.name}
+              eliminatedCount={currentSQ.eliminatedCount}
               isLastSession={isLastSession}
-              isSprint={isSprint}
               onNext={isLastSession ? handleFinish : handleNextSession}
             />
           </motion.div>
@@ -293,7 +290,7 @@ export function Qualifying() {
   )
 }
 
-/* ─── Phase A: Mode Selection ─── */
+/* --- Phase A: Mode Selection --- */
 
 function ModeSelectPhase({
   onSelect,
@@ -313,14 +310,14 @@ function ModeSelectPhase({
   return (
     <>
       <div className="text-center mb-8">
-        <h1 className="font-pixel text-2xl text-f1-accent mb-1">{sessionName}</h1>
+        <h1 className="font-pixel text-2xl text-f1-warning mb-1">{sessionName}</h1>
         <p className="font-pixel text-[10px] text-f1-text/60 mb-1">{sessionLabel}</p>
         <p className="font-pixel text-[10px] text-f1-text/40 mb-1">{trackName}</p>
         <p className="font-pixel text-[9px] text-f1-text/30">
           {driversCount} DRIVERS
           {eliminatedCount > 0
-            ? ` — BOTTOM ${eliminatedCount} ELIMINATED`
-            : ' — POLE POSITION SHOOTOUT'}
+            ? ` \u2014 BOTTOM ${eliminatedCount} ELIMINATED`
+            : ' \u2014 SPRINT POLE SHOOTOUT'}
         </p>
       </div>
 
@@ -351,9 +348,9 @@ function ModeSelectPhase({
   )
 }
 
-/* ─── Phase B: Lap Animation ─── */
+/* --- Phase B: Lap Animation --- */
 
-const SECTOR_DURATIONS = [1.5, 1.5, 2.0]
+const SECTOR_DURATIONS = [1.2, 1.2, 1.5]
 const SECTOR_LABELS = ['S1', 'S2', 'S3']
 const SECTOR_COLORS = ['#22c55e', '#eab308', '#a855f7']
 
@@ -392,7 +389,7 @@ function LapAnimationPhase({
     timers.push(
       setTimeout(() => {
         onComplete()
-      }, totalDuration + 2000),
+      }, totalDuration + 1500),
     )
 
     return () => timers.forEach(clearTimeout)
@@ -401,7 +398,7 @@ function LapAnimationPhase({
   return (
     <>
       <div className="text-center mb-8">
-        <h1 className="font-pixel text-xl text-f1-accent mb-1">{sessionName} — HOT LAP</h1>
+        <h1 className="font-pixel text-xl text-f1-warning mb-1">{sessionName} -- HOT LAP</h1>
         <p className="font-pixel text-[10px] text-f1-text/40">
           {playerResult.error ? 'MISTAKE DETECTED!' : 'PUSHING THE LIMITS...'}
         </p>
@@ -441,13 +438,13 @@ function LapAnimationPhase({
           <p className="font-pixel text-[10px] text-f1-text/50 mb-1">LAP TIME</p>
           <p
             className={`font-pixel text-2xl ${
-              playerResult.error ? 'text-f1-danger' : 'text-f1-accent'
+              playerResult.error ? 'text-f1-danger' : 'text-f1-warning'
             }`}
           >
             {formatLapTime(playerResult.time)}
           </p>
           {playerResult.error && (
-            <p className="font-pixel text-[9px] text-f1-danger/70 mt-1">ERROR — TIME PENALTY</p>
+            <p className="font-pixel text-[9px] text-f1-danger/70 mt-1">ERROR -- TIME PENALTY</p>
           )}
         </motion.div>
       )}
@@ -455,7 +452,7 @@ function LapAnimationPhase({
   )
 }
 
-/* ─── Phase C: Results Grid ─── */
+/* --- Phase C: Results Grid --- */
 
 function ResultsPhase({
   results,
@@ -463,7 +460,6 @@ function ResultsPhase({
   sessionName,
   eliminatedCount,
   isLastSession,
-  isSprint,
   onNext,
 }: {
   results: QualifyingResult[]
@@ -471,7 +467,6 @@ function ResultsPhase({
   sessionName: string
   eliminatedCount: number
   isLastSession: boolean
-  isSprint: boolean
   onNext: () => void
 }) {
   const driverMap = new Map(drivers.map((d) => [d.id, d]))
@@ -483,10 +478,10 @@ function ResultsPhase({
   return (
     <>
       <div className="text-center mb-6">
-        <h1 className="font-pixel text-xl text-f1-accent mb-1">{sessionName} RESULTS</h1>
+        <h1 className="font-pixel text-xl text-f1-warning mb-1">{sessionName} RESULTS</h1>
         {eliminatedCount > 0 && (
           <p className="font-pixel text-[9px] text-f1-text/40">
-            TOP {cutoffPosition} ADVANCE — BOTTOM {eliminatedCount} ELIMINATED
+            TOP {cutoffPosition} ADVANCE -- BOTTOM {eliminatedCount} ELIMINATED
           </p>
         )}
       </div>
@@ -526,7 +521,7 @@ function ResultsPhase({
               />
               <span
                 className={`w-10 ${
-                  isPlayer ? 'text-f1-accent' : isEliminated ? 'text-f1-text/30' : 'text-f1-text'
+                  isPlayer ? 'text-f1-warning' : isEliminated ? 'text-f1-text/30' : 'text-f1-text'
                 }`}
               >
                 {driver.shortName}
@@ -547,7 +542,7 @@ function ResultsPhase({
               >
                 {formatLapTime(result.time)}
               </span>
-              {isPlayer && <span className="text-f1-accent text-[8px] ml-1">YOU</span>}
+              {isPlayer && <span className="text-f1-warning text-[8px] ml-1">YOU</span>}
               {isEliminated && !isPlayer && (
                 <span className="text-f1-danger/50 text-[8px] ml-1">OUT</span>
               )}
@@ -567,22 +562,20 @@ function ResultsPhase({
           <>
             <p className="font-pixel text-[10px] text-f1-text/50 mb-1">
               {isLastSession
-                ? 'GRID POSITION'
-                : `ADVANCING TO ${Q_SESSIONS[Math.min(results.length - 1, 2)]?.name || 'NEXT'}`}
+                ? 'SPRINT GRID POSITION'
+                : `ADVANCING TO ${SQ_SESSIONS[Math.min(results.length - 1, 2)]?.name || 'NEXT'}`}
             </p>
-            <p className="font-pixel text-2xl text-f1-accent">P{playerPosition}</p>
+            <p className="font-pixel text-2xl text-f1-warning">P{playerPosition}</p>
           </>
         )}
       </div>
 
       <PixelButton variant="success" onClick={onNext} className="px-6">
         {isLastSession
-          ? isSprint
-            ? 'PROCEED TO SPRINT SHOOTOUT'
-            : 'PROCEED TO STRATEGY'
+          ? 'PROCEED TO SPRINT RACE'
           : playerIsEliminated
             ? 'SIMULATE REMAINING & PROCEED'
-            : `CONTINUE TO ${Q_SESSIONS[Math.min(results.length, 2)]?.name || 'NEXT'}`}
+            : `CONTINUE TO ${SQ_SESSIONS[Math.min(results.length, 2)]?.name || 'NEXT'}`}
       </PixelButton>
     </>
   )

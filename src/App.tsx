@@ -4,6 +4,8 @@ import { TeamSelect } from './screens/TeamSelect'
 import { HQ } from './screens/HQ'
 import { Practice } from './screens/Practice'
 import { Qualifying } from './screens/Qualifying'
+import { SprintShootout } from './screens/SprintShootout'
+import { SprintRace } from './screens/SprintRace'
 import { StrategyRoom } from './screens/StrategyRoom'
 import { Race } from './screens/Race'
 import { SeasonEnd } from './screens/SeasonEnd'
@@ -22,17 +24,9 @@ function App() {
       case 'qualifying':
         return <Qualifying />
       case 'sprint-shootout':
-        return (
-          <div className="min-h-screen bg-f1-bg flex items-center justify-center">
-            <p className="font-pixel text-f1-accent">SPRINT SHOOTOUT COMING SOON</p>
-          </div>
-        )
+        return <SprintShootout />
       case 'sprint-race':
-        return (
-          <div className="min-h-screen bg-f1-bg flex items-center justify-center">
-            <p className="font-pixel text-f1-accent">SPRINT RACE COMING SOON</p>
-          </div>
-        )
+        return <SprintRace />
       case 'strategy':
         return <StrategyRoom />
       case 'race':
