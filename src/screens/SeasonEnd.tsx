@@ -7,7 +7,7 @@ import { useStrategyStore } from '../stores/strategyStore'
 import { teams } from '../data/teams'
 import { drivers } from '../data/drivers'
 import { DriverNumberBadge } from '../components/DriverNumberBadge'
-import { TeamColorBadge } from '../components/TeamColorBadge'
+import { TeamLogo } from '../components/TeamLogo'
 import { BroadcastTimingTower, type TimingEntry } from '../components/BroadcastTimingTower'
 
 const CONFETTI_COLORS = ['#ffd700', '#ff2a6d', '#00ff41', '#47c7fc', '#a855f7']
@@ -148,7 +148,10 @@ export function SeasonEnd() {
                   WORLD DRIVERS CHAMPION
                 </div>
                 <div className="font-pixel text-xs text-white truncate">{wdcDriver.name}</div>
-                <div className="font-pixel text-[8px] text-f1-text/50 mt-0.5">{wdcTeam.name}</div>
+                <div className="font-pixel text-[8px] text-f1-text/50 mt-0.5 flex items-center gap-1.5">
+                  <TeamLogo teamId={wdcTeam.id} size="sm" />
+                  {wdcTeam.name}
+                </div>
               </div>
               <div
                 className="font-pixel text-lg font-bold shrink-0"
@@ -172,11 +175,7 @@ export function SeasonEnd() {
                 boxShadow: isTeamChampion ? '0 0 20px #ffd700' : undefined,
               }}
             >
-              <TeamColorBadge
-                abbreviation={wccTeam.abbreviation}
-                color={wccTeam.primaryColor}
-                size="lg"
-              />
+              <TeamLogo teamId={wccTeam.id} size="lg" />
               <div className="flex-1 min-w-0">
                 <div className="font-pixel text-[8px] text-f1-text/50 mb-1">
                   WORLD CONSTRUCTORS CHAMPION
