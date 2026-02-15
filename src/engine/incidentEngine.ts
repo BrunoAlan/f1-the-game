@@ -11,10 +11,19 @@ export interface IncidentResult {
 export function checkForIncident(params: {
   aggression: number
   reliability: number
+  extraDNFChance?: number
+  incidentMultiplier?: number
 }): IncidentResult {
+  // Component-based DNF chance (spread over ~53 laps)
+  if (params.extraDNFChance && params.extraDNFChance > 0) {
+    if (randomChance(params.extraDNFChance / 53)) {
+      return { type: 'mechanical', timeLost: 0, dnf: true }
+    }
+  }
+
   const baseChance = 0.002
   const modifier = 1 + params.aggression * 0.005 - params.reliability * 0.003
-  const chance = baseChance * Math.max(0.1, modifier)
+  const chance = baseChance * Math.max(0.1, modifier) * (params.incidentMultiplier ?? 1)
   if (!randomChance(chance)) return { type: 'none', timeLost: 0, dnf: false }
   const roll = Math.random()
   if (roll < 0.5) return { type: 'spin', timeLost: randomBetween(3, 7), dnf: false }
