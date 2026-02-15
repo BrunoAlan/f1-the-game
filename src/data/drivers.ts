@@ -1,0 +1,26 @@
+import type { Driver } from './types'
+
+export const drivers: Driver[] = [
+  { id: 'verstappen', name: 'Max Verstappen', shortName: 'VER', teamId: 'red-bull', speed: 97, aggression: 85, tireManagement: 88, wetSkill: 95 },
+  { id: 'hadjar', name: 'Isack Hadjar', shortName: 'HAD', teamId: 'red-bull', speed: 78, aggression: 72, tireManagement: 70, wetSkill: 68 },
+  { id: 'norris', name: 'Lando Norris', shortName: 'NOR', teamId: 'mclaren', speed: 93, aggression: 75, tireManagement: 85, wetSkill: 82 },
+  { id: 'piastri', name: 'Oscar Piastri', shortName: 'PIA', teamId: 'mclaren', speed: 90, aggression: 70, tireManagement: 83, wetSkill: 78 },
+  { id: 'russell', name: 'George Russell', shortName: 'RUS', teamId: 'mercedes', speed: 89, aggression: 68, tireManagement: 82, wetSkill: 80 },
+  { id: 'antonelli', name: 'Kimi Antonelli', shortName: 'ANT', teamId: 'mercedes', speed: 82, aggression: 74, tireManagement: 72, wetSkill: 70 },
+  { id: 'hamilton', name: 'Lewis Hamilton', shortName: 'HAM', teamId: 'ferrari', speed: 94, aggression: 72, tireManagement: 92, wetSkill: 93 },
+  { id: 'leclerc', name: 'Charles Leclerc', shortName: 'LEC', teamId: 'ferrari', speed: 93, aggression: 80, tireManagement: 78, wetSkill: 75 },
+  { id: 'alonso', name: 'Fernando Alonso', shortName: 'ALO', teamId: 'aston-martin', speed: 88, aggression: 65, tireManagement: 90, wetSkill: 88 },
+  { id: 'stroll', name: 'Lance Stroll', shortName: 'STR', teamId: 'aston-martin', speed: 75, aggression: 62, tireManagement: 74, wetSkill: 70 },
+  { id: 'colapinto', name: 'Franco Colapinto', shortName: 'COL', teamId: 'alpine', speed: 77, aggression: 73, tireManagement: 68, wetSkill: 65 },
+  { id: 'gasly', name: 'Pierre Gasly', shortName: 'GAS', teamId: 'alpine', speed: 84, aggression: 70, tireManagement: 79, wetSkill: 76 },
+  { id: 'bortoleto', name: 'Gabriel Bortoleto', shortName: 'BOR', teamId: 'audi', speed: 79, aggression: 71, tireManagement: 72, wetSkill: 67 },
+  { id: 'hulkenberg', name: 'Nico Hulkenberg', shortName: 'HUL', teamId: 'audi', speed: 82, aggression: 60, tireManagement: 80, wetSkill: 75 },
+  { id: 'perez', name: 'Sergio Perez', shortName: 'PER', teamId: 'cadillac', speed: 83, aggression: 65, tireManagement: 81, wetSkill: 78 },
+  { id: 'bottas', name: 'Valtteri Bottas', shortName: 'BOT', teamId: 'cadillac', speed: 81, aggression: 55, tireManagement: 83, wetSkill: 77 },
+  { id: 'albon', name: 'Alexander Albon', shortName: 'ALB', teamId: 'williams', speed: 85, aggression: 68, tireManagement: 80, wetSkill: 76 },
+  { id: 'sainz', name: 'Carlos Sainz', shortName: 'SAI', teamId: 'williams', speed: 90, aggression: 72, tireManagement: 85, wetSkill: 82 },
+  { id: 'lindblad', name: 'Arvid Lindblad', shortName: 'LIN', teamId: 'racing-bulls', speed: 76, aggression: 74, tireManagement: 68, wetSkill: 64 },
+  { id: 'lawson', name: 'Liam Lawson', shortName: 'LAW', teamId: 'racing-bulls', speed: 80, aggression: 76, tireManagement: 73, wetSkill: 71 },
+  { id: 'bearman', name: 'Oliver Bearman', shortName: 'BEA', teamId: 'haas', speed: 78, aggression: 72, tireManagement: 70, wetSkill: 66 },
+  { id: 'ocon', name: 'Esteban Ocon', shortName: 'OCO', teamId: 'haas', speed: 83, aggression: 68, tireManagement: 77, wetSkill: 74 },
+]
