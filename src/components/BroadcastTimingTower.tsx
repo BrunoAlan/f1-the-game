@@ -3,6 +3,7 @@ import type { Driver, Team } from '../data/types'
 import type { TireCompound } from '../data/types'
 import { DriverNumberBadge } from './DriverNumberBadge'
 import { StatusBadge } from './StatusBadge'
+import { TeamLogo } from './TeamLogo'
 import { TireCompoundIcon } from './TireCompoundIcon'
 
 export interface TimingEntry {
@@ -88,9 +89,7 @@ export function BroadcastTimingTower({
                   <span className={`${isPlayer ? 'text-white' : 'text-f1-text'} truncate`}>
                     {driver.shortName}
                   </span>
-                  <span className="text-f1-text/30 text-[7px] truncate hidden sm:inline">
-                    {team.abbreviation}
-                  </span>
+                  <TeamLogo teamId={team.id} size="sm" />
                 </div>
 
                 {/* Tire compound (if provided) */}
