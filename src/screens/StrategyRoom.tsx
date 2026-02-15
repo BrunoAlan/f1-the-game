@@ -19,14 +19,8 @@ const WEATHER_EMOJI: Record<string, string> = {
 const DRY_COMPOUNDS: TireCompound[] = ['soft', 'medium', 'hard']
 
 export function StrategyRoom() {
-  const {
-    selectedDriverId,
-    selectedTeamId,
-    weather,
-    practiceData,
-    qualifyingGrid,
-    setPhase,
-  } = useWeekendStore()
+  const { selectedDriverId, selectedTeamId, weather, practiceData, qualifyingGrid, setPhase } =
+    useWeekendStore()
 
   const stints = useStrategyStore((s) => s.stints)
 
@@ -50,7 +44,7 @@ export function StrategyRoom() {
   const allocatedLaps = stints.reduce((sum, s) => sum + s.laps, 0)
   const lapsMatch = allocatedLaps === track.totalLaps
   const uniqueDryCompounds = new Set(
-    stints.map((s) => s.compound).filter((c) => DRY_COMPOUNDS.includes(c))
+    stints.map((s) => s.compound).filter((c) => DRY_COMPOUNDS.includes(c)),
   )
   const hasTwoDryCompounds = uniqueDryCompounds.size >= 2
   const isStrategyValid = lapsMatch && hasTwoDryCompounds
@@ -67,21 +61,19 @@ export function StrategyRoom() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-6 w-full max-w-4xl"
       >
-        <h1 className="font-pixel text-xl text-f1-accent mb-2">
-          STRATEGY ROOM
-        </h1>
+        <h1 className="font-pixel text-xl text-f1-accent mb-2">STRATEGY ROOM</h1>
         <div className="flex items-center justify-center gap-4 font-pixel text-[9px] text-f1-text/60">
           <span>{track.name}</span>
           <span className="text-f1-border">|</span>
           <span>{track.totalLaps} LAPS</span>
           <span className="text-f1-border">|</span>
-          <span>{WEATHER_EMOJI[weather] ?? ''} {weather.toUpperCase()}</span>
+          <span>
+            {WEATHER_EMOJI[weather] ?? ''} {weather.toUpperCase()}
+          </span>
           {driver && team && (
             <>
               <span className="text-f1-border">|</span>
-              <span style={{ color: team.primaryColor }}>
-                {driver.shortName}
-              </span>
+              <span style={{ color: team.primaryColor }}>{driver.shortName}</span>
             </>
           )}
         </div>
@@ -94,9 +86,7 @@ export function StrategyRoom() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <DegradationChart
-            revealedCompounds={practiceData.revealedCompounds}
-          />
+          <DegradationChart revealedCompounds={practiceData.revealedCompounds} />
         </motion.div>
 
         <motion.div
@@ -122,20 +112,13 @@ export function StrategyRoom() {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-6">
             <div className="text-center">
-              <p className="font-pixel text-[8px] text-f1-text/40 mb-1">
-                STARTING
-              </p>
-              <p className="font-pixel text-lg text-f1-accent">
-                P{startingPosition}
-              </p>
+              <p className="font-pixel text-[8px] text-f1-text/40 mb-1">STARTING</p>
+              <p className="font-pixel text-lg text-f1-accent">P{startingPosition}</p>
             </div>
             <div className="text-center">
-              <p className="font-pixel text-[8px] text-f1-text/40 mb-1">
-                PREDICTED
-              </p>
+              <p className="font-pixel text-[8px] text-f1-text/40 mb-1">PREDICTED</p>
               <p className="font-pixel text-lg text-f1-text/70">
-                P{predictedFinish}{' '}
-                <span className="text-[8px] text-f1-text/30">(+/-3)</span>
+                P{predictedFinish} <span className="text-[8px] text-f1-text/30">(+/-3)</span>
               </p>
             </div>
           </div>

@@ -18,16 +18,12 @@ export function TeamSelect() {
 
   return (
     <div className="min-h-screen bg-f1-bg px-4 py-8 flex flex-col items-center">
-      <h1 className="font-pixel text-2xl text-f1-accent mb-2 text-center">
-        F1 THE GAME
-      </h1>
-      <p className="font-pixel text-[10px] text-f1-text/60 mb-8 text-center">
-        SELECT YOUR TEAM
-      </p>
+      <h1 className="font-pixel text-2xl text-f1-accent mb-2 text-center">F1 THE GAME</h1>
+      <p className="font-pixel text-[10px] text-f1-text/60 mb-8 text-center">SELECT YOUR TEAM</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-5xl mb-8">
-        {teams.map(team => {
-          const teamDrivers = drivers.filter(d => d.teamId === team.id)
+        {teams.map((team) => {
+          const teamDrivers = drivers.filter((d) => d.teamId === team.id)
           const isSelected = selectedTeamId === team.id
 
           return (
@@ -44,16 +40,12 @@ export function TeamSelect() {
               }}
             >
               <div className="mb-3">
-                <div className="font-pixel text-[11px] text-f1-text font-bold">
-                  {team.name}
-                </div>
-                <div className="font-pixel text-[9px] text-f1-text/40 mt-0.5">
-                  {team.engine}
-                </div>
+                <div className="font-pixel text-[11px] text-f1-text font-bold">{team.name}</div>
+                <div className="font-pixel text-[9px] text-f1-text/40 mt-0.5">{team.engine}</div>
               </div>
 
               <div className="flex flex-col gap-1.5 mb-3">
-                {teamDrivers.map(driver => {
+                {teamDrivers.map((driver) => {
                   const isDriverSelected =
                     selectedTeamId === team.id && selectedDriverId === driver.id
 

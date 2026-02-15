@@ -12,7 +12,10 @@ export function getNextWeather(current: WeatherCondition): WeatherCondition {
   return options[Math.floor(Math.random() * options.length)]
 }
 
-export function simulateWeatherForLap(current: WeatherCondition, changeChance: number): WeatherCondition {
+export function simulateWeatherForLap(
+  current: WeatherCondition,
+  changeChance: number,
+): WeatherCondition {
   if (randomChance(changeChance)) {
     return getNextWeather(current)
   }

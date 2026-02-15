@@ -8,11 +8,16 @@ function App() {
   const phase = useWeekendStore((s) => s.phase)
 
   switch (phase) {
-    case 'team-select': return <TeamSelect />
-    case 'practice': return <Practice />
-    case 'qualifying': return <Qualifying />
-    case 'strategy': return <StrategyRoom />
-    default: return <TeamSelect />
+    case 'team-select':
+      return <TeamSelect />
+    case 'practice':
+      return <Practice />
+    case 'qualifying':
+      return <Qualifying />
+    case 'strategy':
+      return <StrategyRoom />
+    default:
+      return <TeamSelect />
   }
 }
 

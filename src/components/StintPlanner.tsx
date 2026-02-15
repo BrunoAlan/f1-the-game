@@ -32,9 +32,7 @@ export function StintPlanner({
 
   // Validate: at least 2 different dry compounds
   const uniqueDryCompounds = new Set(
-    stints
-      .map((s) => s.compound)
-      .filter((c) => DRY_COMPOUNDS.includes(c))
+    stints.map((s) => s.compound).filter((c) => DRY_COMPOUNDS.includes(c)),
   )
   const hasTwoDryCompounds = uniqueDryCompounds.size >= 2
 
@@ -58,21 +56,14 @@ export function StintPlanner({
 
   return (
     <div className="bg-slate-800 border-2 border-f1-border rounded-sm p-4">
-      <h2 className="font-pixel text-[11px] text-f1-accent mb-4">
-        STINT PLANNER
-      </h2>
+      <h2 className="font-pixel text-[11px] text-f1-accent mb-4">STINT PLANNER</h2>
 
       <div className="flex flex-col gap-3 mb-4">
         {stints.map((stint, index) => (
-          <div
-            key={index}
-            className="bg-slate-900/60 border border-f1-border/40 rounded-sm p-3"
-          >
+          <div key={index} className="bg-slate-900/60 border border-f1-border/40 rounded-sm p-3">
             {/* Stint header row */}
             <div className="flex items-center justify-between mb-2">
-              <span className="font-pixel text-[9px] text-f1-text/60">
-                STINT {index + 1}
-              </span>
+              <span className="font-pixel text-[9px] text-f1-text/60">STINT {index + 1}</span>
               {stints.length > 2 && (
                 <button
                   onClick={() => removeStint(index)}
@@ -87,7 +78,8 @@ export function StintPlanner({
             <div className="flex gap-1.5 mb-2">
               {availableCompounds.map((compound) => {
                 const isActive = stint.compound === compound
-                const isLocked = !revealedCompounds.includes(compound) && DRY_COMPOUNDS.includes(compound)
+                const isLocked =
+                  !revealedCompounds.includes(compound) && DRY_COMPOUNDS.includes(compound)
                 const color = tireColors[compound]
 
                 return (
@@ -98,9 +90,10 @@ export function StintPlanner({
                     className={`
                       font-pixel text-[9px] px-2.5 py-1.5 border rounded-sm transition-colors cursor-pointer
                       disabled:opacity-30 disabled:cursor-not-allowed
-                      ${isActive
-                        ? 'border-current bg-slate-700'
-                        : 'border-f1-border/40 hover:border-f1-border bg-slate-800/60'
+                      ${
+                        isActive
+                          ? 'border-current bg-slate-700'
+                          : 'border-f1-border/40 hover:border-f1-border bg-slate-800/60'
                       }
                     `}
                     style={{
@@ -125,9 +118,7 @@ export function StintPlanner({
                 onChange={(e) => handleLapsChange(index, parseInt(e.target.value) || 1)}
                 className="w-16 bg-slate-900 border border-f1-border/40 rounded-sm px-2 py-1 font-pixel text-[10px] text-f1-text text-center outline-none focus:border-f1-accent transition-colors"
               />
-              <span className="font-pixel text-[8px] text-f1-text/30">
-                / {totalLaps}
-              </span>
+              <span className="font-pixel text-[8px] text-f1-text/30">/ {totalLaps}</span>
             </div>
           </div>
         ))}
@@ -146,11 +137,7 @@ export function StintPlanner({
         <span className="font-pixel text-[9px] text-f1-text/50">TOTAL</span>
         <span
           className={`font-pixel text-[10px] ${
-            lapsMatch
-              ? 'text-f1-success'
-              : lapsOverflow
-                ? 'text-f1-danger'
-                : 'text-f1-warning'
+            lapsMatch ? 'text-f1-success' : lapsOverflow ? 'text-f1-danger' : 'text-f1-warning'
           }`}
         >
           {allocatedLaps} / {totalLaps} LAPS
@@ -159,7 +146,9 @@ export function StintPlanner({
 
       {/* Warnings */}
       {!lapsMatch && (
-        <p className={`font-pixel text-[8px] mt-2 ${lapsOverflow ? 'text-f1-danger' : 'text-f1-warning'}`}>
+        <p
+          className={`font-pixel text-[8px] mt-2 ${lapsOverflow ? 'text-f1-danger' : 'text-f1-warning'}`}
+        >
           {lapsOverflow
             ? 'TOO MANY LAPS ALLOCATED!'
             : `${totalLaps - allocatedLaps} LAPS UNALLOCATED`}

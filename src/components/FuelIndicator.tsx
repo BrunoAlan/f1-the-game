@@ -5,12 +5,7 @@ interface FuelIndicatorProps {
 export function FuelIndicator({ fuelPercent }: FuelIndicatorProps) {
   const clamped = Math.max(0, Math.min(100, fuelPercent))
 
-  const barColor =
-    clamped > 50
-      ? 'bg-f1-success'
-      : clamped >= 20
-        ? 'bg-f1-warning'
-        : 'bg-f1-danger'
+  const barColor = clamped > 50 ? 'bg-f1-success' : clamped >= 20 ? 'bg-f1-warning' : 'bg-f1-danger'
 
   return (
     <div className="flex items-center gap-2 font-pixel text-[10px]">

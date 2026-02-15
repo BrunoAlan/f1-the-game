@@ -2,16 +2,21 @@ import type { TireSpec, TireCompound, WeatherCondition } from './types'
 
 export const tireSpecs: Record<TireCompound, TireSpec> = {
   soft: { compound: 'soft', gripBase: 0.97, degradationRate: 0.025, optimalLife: 10 },
-  medium: { compound: 'medium', gripBase: 1.00, degradationRate: 0.015, optimalLife: 20 },
+  medium: { compound: 'medium', gripBase: 1.0, degradationRate: 0.015, optimalLife: 20 },
   hard: { compound: 'hard', gripBase: 1.03, degradationRate: 0.008, optimalLife: 35 },
-  intermediate: { compound: 'intermediate', gripBase: 0.95, degradationRate: 0.012, optimalLife: 25 },
-  wet: { compound: 'wet', gripBase: 0.92, degradationRate: 0.010, optimalLife: 30 },
+  intermediate: {
+    compound: 'intermediate',
+    gripBase: 0.95,
+    degradationRate: 0.012,
+    optimalLife: 25,
+  },
+  wet: { compound: 'wet', gripBase: 0.92, degradationRate: 0.01, optimalLife: 30 },
 }
 
 export const weatherGripMatrix: Record<WeatherCondition, Record<TireCompound, number>> = {
-  dry: { soft: 1.0, medium: 1.0, hard: 1.0, intermediate: 1.10, wet: 1.20 },
+  dry: { soft: 1.0, medium: 1.0, hard: 1.0, intermediate: 1.1, wet: 1.2 },
   'light-rain': { soft: 1.25, medium: 1.25, hard: 1.25, intermediate: 1.0, wet: 1.05 },
-  'heavy-rain': { soft: 1.60, medium: 1.60, hard: 1.60, intermediate: 1.15, wet: 1.0 },
+  'heavy-rain': { soft: 1.6, medium: 1.6, hard: 1.6, intermediate: 1.15, wet: 1.0 },
 }
 
 export const tireColors: Record<TireCompound, string> = {

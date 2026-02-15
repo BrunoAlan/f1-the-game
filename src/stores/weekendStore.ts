@@ -30,12 +30,13 @@ export const useWeekendStore = create<WeekendState>((set) => ({
   selectTeam: (teamId, driverId) => set({ selectedTeamId: teamId, selectedDriverId: driverId }),
   setPracticeData: (data) => set({ practiceData: data }),
   setQualifyingGrid: (grid) => set({ qualifyingGrid: grid }),
-  reset: () => set({
-    phase: 'team-select',
-    selectedTeamId: null,
-    selectedDriverId: null,
-    weather: 'dry',
-    practiceData: { dataCollected: 0, revealedCompounds: [] },
-    qualifyingGrid: [],
-  }),
+  reset: () =>
+    set({
+      phase: 'team-select',
+      selectedTeamId: null,
+      selectedDriverId: null,
+      weather: 'dry',
+      practiceData: { dataCollected: 0, revealedCompounds: [] },
+      qualifyingGrid: [],
+    }),
 }))

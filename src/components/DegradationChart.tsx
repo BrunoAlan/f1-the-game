@@ -27,9 +27,7 @@ export function DegradationChart({ revealedCompounds }: DegradationChartProps) {
                   {compound}
                 </span>
                 <div className="flex-1 h-5 bg-slate-900 border border-f1-border/40 rounded-sm flex items-center justify-center">
-                  <span className="font-pixel text-[8px] text-f1-text/30">
-                    LOCKED
-                  </span>
+                  <span className="font-pixel text-[8px] text-f1-text/30">LOCKED</span>
                 </div>
                 <span className="font-pixel text-[8px] text-f1-text/20 w-20 text-right shrink-0">
                   ???
@@ -40,10 +38,7 @@ export function DegradationChart({ revealedCompounds }: DegradationChartProps) {
 
           return (
             <div key={compound} className="flex items-center gap-3">
-              <span
-                className="font-pixel text-[9px] w-16 uppercase shrink-0"
-                style={{ color }}
-              >
+              <span className="font-pixel text-[9px] w-16 uppercase shrink-0" style={{ color }}>
                 {compound}
               </span>
               <div className="flex-1 h-5 bg-slate-900 border border-f1-border/40 rounded-sm overflow-hidden">

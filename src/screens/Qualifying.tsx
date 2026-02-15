@@ -6,7 +6,11 @@ import { drivers } from '../data/drivers'
 import { tracks } from '../data/tracks'
 import { PixelButton } from '../components/PixelButton'
 import { formatLapTime } from '../utils/formatTime'
-import { simulateQualifying, type QualifyingMode, type QualifyingResult } from '../engine/qualifyingSimulator'
+import {
+  simulateQualifying,
+  type QualifyingMode,
+  type QualifyingResult,
+} from '../engine/qualifyingSimulator'
 
 type QualifyingPhase = 'mode-select' | 'lap-animation' | 'results'
 
@@ -86,7 +90,7 @@ export function Qualifying() {
         driverId: r.driverId,
         position: r.position,
         time: r.time,
-      }))
+      })),
     )
     setPhase('strategy')
   }
@@ -97,10 +101,7 @@ export function Qualifying() {
         <ModeSelectPhase onSelect={handleModeSelect} trackName={track.name} />
       )}
       {qualifyingPhase === 'lap-animation' && playerResult && (
-        <LapAnimationPhase
-          playerResult={playerResult}
-          onComplete={handleAnimationComplete}
-        />
+        <LapAnimationPhase playerResult={playerResult} onComplete={handleAnimationComplete} />
       )}
       {qualifyingPhase === 'results' && (
         <ResultsPhase
@@ -127,9 +128,7 @@ function ModeSelectPhase({
       <div className="text-center mb-8">
         <h1 className="font-pixel text-xl text-f1-accent mb-1">QUALIFYING</h1>
         <p className="font-pixel text-[10px] text-f1-text/60 mb-1">{trackName}</p>
-        <p className="font-pixel text-[10px] text-f1-text/40">
-          Choose Your Approach
-        </p>
+        <p className="font-pixel text-[10px] text-f1-text/40">Choose Your Approach</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-2xl">
@@ -141,22 +140,14 @@ function ModeSelectPhase({
           >
             <span className="text-2xl">{opt.emoji}</span>
             <div className="text-center">
-              <span className={`font-pixel text-sm ${opt.color}`}>
-                {opt.label}
-              </span>
+              <span className={`font-pixel text-sm ${opt.color}`}>{opt.label}</span>
               {opt.sublabel && (
-                <span className={`font-pixel text-sm ${opt.color} block`}>
-                  {opt.sublabel}
-                </span>
+                <span className={`font-pixel text-sm ${opt.color} block`}>{opt.sublabel}</span>
               )}
             </div>
             <div className="flex flex-col items-center gap-1">
-              <span className="font-pixel text-[9px] text-f1-text/60">
-                {opt.pace}
-              </span>
-              <span className="font-pixel text-[9px] text-f1-text/40">
-                {opt.error}
-              </span>
+              <span className="font-pixel text-[9px] text-f1-text/60">{opt.pace}</span>
+              <span className="font-pixel text-[9px] text-f1-text/40">{opt.error}</span>
             </div>
           </button>
         ))}
@@ -190,7 +181,7 @@ function LapAnimationPhase({
       timers.push(
         setTimeout(() => {
           setActiveSector(i + 1)
-        }, cumulative)
+        }, cumulative),
       )
     })
 
@@ -199,14 +190,14 @@ function LapAnimationPhase({
     timers.push(
       setTimeout(() => {
         setShowTime(true)
-      }, totalDuration + 300)
+      }, totalDuration + 300),
     )
 
     // Auto-advance after showing time
     timers.push(
       setTimeout(() => {
         onComplete()
-      }, totalDuration + 2000)
+      }, totalDuration + 2000),
     )
 
     return () => timers.forEach(clearTimeout)
@@ -228,9 +219,7 @@ function LapAnimationPhase({
 
           return (
             <div key={i} className="flex items-center gap-3">
-              <span className="font-pixel text-[10px] text-f1-text/50 w-8">
-                {SECTOR_LABELS[i]}
-              </span>
+              <span className="font-pixel text-[10px] text-f1-text/50 w-8">{SECTOR_LABELS[i]}</span>
               <div className="flex-1 h-5 bg-slate-800 border border-f1-border rounded-sm overflow-hidden">
                 <motion.div
                   className="h-full"
@@ -239,11 +228,7 @@ function LapAnimationPhase({
                   animate={{
                     width: isFilled ? '100%' : isFilling ? '100%' : '0%',
                   }}
-                  transition={
-                    isFilling
-                      ? { duration, ease: 'easeInOut' }
-                      : { duration: 0 }
-                  }
+                  transition={isFilling ? { duration, ease: 'easeInOut' } : { duration: 0 }}
                 />
               </div>
             </div>
@@ -258,9 +243,7 @@ function LapAnimationPhase({
           transition={{ type: 'spring', damping: 12 }}
           className="text-center"
         >
-          <p className="font-pixel text-[10px] text-f1-text/50 mb-1">
-            LAP TIME
-          </p>
+          <p className="font-pixel text-[10px] text-f1-text/50 mb-1">LAP TIME</p>
           <p
             className={`font-pixel text-2xl ${
               playerResult.error ? 'text-f1-danger' : 'text-f1-accent'
@@ -269,9 +252,7 @@ function LapAnimationPhase({
             {formatLapTime(playerResult.time)}
           </p>
           {playerResult.error && (
-            <p className="font-pixel text-[9px] text-f1-danger/70 mt-1">
-              ERROR — TIME PENALTY
-            </p>
+            <p className="font-pixel text-[9px] text-f1-danger/70 mt-1">ERROR — TIME PENALTY</p>
           )}
         </motion.div>
       )}
@@ -297,9 +278,7 @@ function ResultsPhase({
   return (
     <>
       <div className="text-center mb-6">
-        <h1 className="font-pixel text-xl text-f1-accent mb-1">
-          QUALIFYING RESULTS
-        </h1>
+        <h1 className="font-pixel text-xl text-f1-accent mb-1">QUALIFYING RESULTS</h1>
       </div>
 
       <div className="w-full max-w-xl flex flex-col gap-0.5 mb-6">
@@ -317,27 +296,19 @@ function ResultsPhase({
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: result.position * 0.04 }}
               className={`flex items-center gap-2 px-2 py-1.5 rounded-sm font-pixel text-[10px] ${
-                isPlayer
-                  ? 'bg-slate-700/80 border-l-2'
-                  : 'bg-slate-800/40'
+                isPlayer ? 'bg-slate-700/80 border-l-2' : 'bg-slate-800/40'
               }`}
               style={isPlayer ? { borderLeftColor: team.primaryColor } : undefined}
             >
-              <span className="w-8 text-right text-f1-text/50">
-                P{result.position}
-              </span>
+              <span className="w-8 text-right text-f1-text/50">P{result.position}</span>
               <div
                 className="w-1.5 h-4 rounded-sm shrink-0"
                 style={{ backgroundColor: team.primaryColor }}
               />
-              <span
-                className={`w-10 ${isPlayer ? 'text-f1-accent' : 'text-f1-text'}`}
-              >
+              <span className={`w-10 ${isPlayer ? 'text-f1-accent' : 'text-f1-text'}`}>
                 {driver.shortName}
               </span>
-              <span className="flex-1 text-f1-text/50 truncate">
-                {team.name}
-              </span>
+              <span className="flex-1 text-f1-text/50 truncate">{team.name}</span>
               <span
                 className={`w-24 text-right ${
                   result.error ? 'text-f1-danger/70' : 'text-f1-text/70'
@@ -345,9 +316,7 @@ function ResultsPhase({
               >
                 {formatLapTime(result.time)}
               </span>
-              {isPlayer && (
-                <span className="text-f1-accent text-[8px] ml-1">YOU</span>
-              )}
+              {isPlayer && <span className="text-f1-accent text-[8px] ml-1">YOU</span>}
             </motion.div>
           )
         })}
@@ -355,9 +324,7 @@ function ResultsPhase({
 
       {/* Player position summary */}
       <div className="text-center mb-6">
-        <p className="font-pixel text-[10px] text-f1-text/50 mb-1">
-          YOUR STARTING POSITION
-        </p>
+        <p className="font-pixel text-[10px] text-f1-text/50 mb-1">YOUR STARTING POSITION</p>
         <p className="font-pixel text-2xl text-f1-accent">P{playerPosition}</p>
       </div>
 

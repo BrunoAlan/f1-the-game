@@ -13,21 +13,14 @@ export function TireIndicator({ compound, gripPercent, lapsOnTire }: TireIndicat
 
   return (
     <div className="flex flex-row items-stretch gap-2 font-pixel text-[10px]">
-      <div
-        className="w-1 min-h-[24px] rounded-sm"
-        style={{ backgroundColor: color }}
-      />
+      <div className="w-1 min-h-[24px] rounded-sm" style={{ backgroundColor: color }} />
       <div className="flex flex-col justify-center gap-0.5">
         <div className="flex items-center gap-2">
           <span style={{ color }} className="uppercase font-bold">
             {compound}
           </span>
-          <span className="text-f1-text/70">
-            {Math.round(clampedGrip)}%
-          </span>
-          <span className="text-f1-text/50">
-            L{lapsOnTire}
-          </span>
+          <span className="text-f1-text/70">{Math.round(clampedGrip)}%</span>
+          <span className="text-f1-text/50">L{lapsOnTire}</span>
         </div>
       </div>
     </div>

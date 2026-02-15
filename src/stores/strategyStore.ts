@@ -24,9 +24,16 @@ export const useStrategyStore = create<StrategyState>((set) => ({
 
   addStint: (stint) => set((s) => ({ stints: [...s.stints, stint] })),
   removeStint: (index) => set((s) => ({ stints: s.stints.filter((_, i) => i !== index) })),
-  updateStint: (index, stint) => set((s) => ({
-    stints: s.stints.map((existing, i) => (i === index ? stint : existing)),
-  })),
+  updateStint: (index, stint) =>
+    set((s) => ({
+      stints: s.stints.map((existing, i) => (i === index ? stint : existing)),
+    })),
   setStints: (stints) => set({ stints }),
-  reset: () => set({ stints: [{ compound: 'medium', laps: 25 }, { compound: 'hard', laps: 28 }] }),
+  reset: () =>
+    set({
+      stints: [
+        { compound: 'medium', laps: 25 },
+        { compound: 'hard', laps: 28 },
+      ],
+    }),
 }))

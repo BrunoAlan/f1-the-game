@@ -12,11 +12,21 @@ describe('reduceGap', () => {
 
 describe('attemptOvertake', () => {
   it('returns false if gap > 0.5', () => {
-    const result = attemptOvertake({ gap: 1.0, attackerAggression: 90, speedDiff: 5, overtakingDifficulty: 30 })
+    const result = attemptOvertake({
+      gap: 1.0,
+      attackerAggression: 90,
+      speedDiff: 5,
+      overtakingDifficulty: 30,
+    })
     expect(result.overtook).toBe(false)
   })
   it('returns a boolean when gap < 0.5', () => {
-    const result = attemptOvertake({ gap: 0.3, attackerAggression: 90, speedDiff: 5, overtakingDifficulty: 30 })
+    const result = attemptOvertake({
+      gap: 0.3,
+      attackerAggression: 90,
+      speedDiff: 5,
+      overtakingDifficulty: 30,
+    })
     expect(typeof result.overtook).toBe('boolean')
   })
 })

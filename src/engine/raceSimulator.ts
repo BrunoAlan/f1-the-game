@@ -54,7 +54,7 @@ interface InitParams {
 
 export function createInitialRaceState(params: InitParams): RaceState {
   const { teams, drivers, track, grid, weather, playerDriverId } = params
-  const driverMap = new Map(drivers.map(d => [d.id, d]))
+  const driverMap = new Map(drivers.map((d) => [d.id, d]))
 
   const cars: CarState[] = grid
     .sort((a, b) => a.position - b.position)
@@ -97,13 +97,18 @@ export function simulateLap(state: RaceState): RaceState {
   next.currentLap += 1
   next.events = []
 
-  const teamMap = new Map(next.teams.map(t => [t.id, t]))
-  const driverMap = new Map(next.drivers.map(d => [d.id, d]))
+  const teamMap = new Map(next.teams.map((t) => [t.id, t]))
+  const driverMap = new Map(next.drivers.map((d) => [d.id, d]))
 
   // Weather
   const newWeather = simulateWeatherForLap(next.weather, next.track.weatherChangeChance)
   if (newWeather !== next.weather) {
-    next.events.push({ lap: next.currentLap, type: 'weather-change', driverId: '', message: `Weather changed to ${newWeather}` })
+    next.events.push({
+      lap: next.currentLap,
+      type: 'weather-change',
+      driverId: '',
+      message: `Weather changed to ${newWeather}`,
+    })
     next.weather = newWeather
   }
 
@@ -112,7 +117,12 @@ export function simulateLap(state: RaceState): RaceState {
     next.safetyCarLapsLeft -= 1
     if (next.safetyCarLapsLeft <= 0) {
       next.safetyCar = false
-      next.events.push({ lap: next.currentLap, type: 'safety-car', driverId: '', message: 'Safety Car in!' })
+      next.events.push({
+        lap: next.currentLap,
+        type: 'safety-car',
+        driverId: '',
+        message: 'Safety Car in!',
+      })
     }
   }
 
@@ -134,7 +144,12 @@ export function simulateLap(state: RaceState): RaceState {
       if (!car.compoundsUsed.includes(car.tireCompound)) {
         car.compoundsUsed.push(car.tireCompound)
       }
-      next.events.push({ lap: next.currentLap, type: 'pit-stop', driverId: car.driverId, message: `${driver.shortName} pits for ${car.tireCompound}` })
+      next.events.push({
+        lap: next.currentLap,
+        type: 'pit-stop',
+        driverId: car.driverId,
+        message: `${driver.shortName} pits for ${car.tireCompound}`,
+      })
     } else {
       car.pitThisLap = false
     }
@@ -160,34 +175,54 @@ export function simulateLap(state: RaceState): RaceState {
     car.fuelLoad = Math.max(0, car.fuelLoad - fuelPerLap)
 
     // Incidents
-    const incident = checkForIncident({ aggression: driver.aggression, reliability: team.reliability })
+    const incident = checkForIncident({
+      aggression: driver.aggression,
+      reliability: team.reliability,
+    })
     if (incident.type !== 'none') {
       if (incident.dnf) {
         car.dnf = true
-        next.events.push({ lap: next.currentLap, type: 'incident', driverId: car.driverId, message: `${driver.shortName} retires — ${incident.type}` })
+        next.events.push({
+          lap: next.currentLap,
+          type: 'incident',
+          driverId: car.driverId,
+          message: `${driver.shortName} retires — ${incident.type}`,
+        })
         if (!next.safetyCar && incident.type === 'mechanical') {
           next.safetyCar = true
           next.safetyCarLapsLeft = 3 + Math.floor(Math.random() * 3)
-          next.events.push({ lap: next.currentLap, type: 'safety-car', driverId: '', message: 'Safety Car deployed!' })
+          next.events.push({
+            lap: next.currentLap,
+            type: 'safety-car',
+            driverId: '',
+            message: 'Safety Car deployed!',
+          })
         }
       } else {
         car.cumulativeTime += incident.timeLost
-        next.events.push({ lap: next.currentLap, type: 'incident', driverId: car.driverId, message: `${driver.shortName} has a ${incident.type}!` })
+        next.events.push({
+          lap: next.currentLap,
+          type: 'incident',
+          driverId: car.driverId,
+          message: `${driver.shortName} has a ${incident.type}!`,
+        })
       }
     }
   }
 
   // Safety car compression
   if (next.safetyCar) {
-    const activeCars = next.cars.filter(c => !c.dnf)
+    const activeCars = next.cars.filter((c) => !c.dnf)
     activeCars.sort((a, b) => a.cumulativeTime - b.cumulativeTime)
-    const times = activeCars.map(c => c.cumulativeTime)
+    const times = activeCars.map((c) => c.cumulativeTime)
     const compressed = compressGaps(times)
-    activeCars.forEach((car, i) => { car.cumulativeTime = compressed[i] })
+    activeCars.forEach((car, i) => {
+      car.cumulativeTime = compressed[i]
+    })
   }
 
   // Overtaking
-  const activeCars = next.cars.filter(c => !c.dnf)
+  const activeCars = next.cars.filter((c) => !c.dnf)
   activeCars.sort((a, b) => a.cumulativeTime - b.cumulativeTime)
 
   if (!next.safetyCar) {
@@ -201,24 +236,40 @@ export function simulateLap(state: RaceState): RaceState {
       const defenderTeam = teamMap.get(defender.teamId)!
 
       const newGap = reduceGap(gap, defender.lastLapTime - attacker.lastLapTime)
-      if (newGap <= 0 || attemptOvertake({
-        gap: newGap,
-        attackerAggression: attackerDriver.aggression,
-        speedDiff: attackerTeam.topSpeed - defenderTeam.topSpeed,
-        overtakingDifficulty: next.track.overtakingDifficulty,
-      }).overtook) {
+      if (
+        newGap <= 0 ||
+        attemptOvertake({
+          gap: newGap,
+          attackerAggression: attackerDriver.aggression,
+          speedDiff: attackerTeam.topSpeed - defenderTeam.topSpeed,
+          overtakingDifficulty: next.track.overtakingDifficulty,
+        }).overtook
+      ) {
         const tempTime = defender.cumulativeTime
         defender.cumulativeTime = attacker.cumulativeTime
         attacker.cumulativeTime = tempTime - 0.3
-        next.events.push({ lap: next.currentLap, type: 'overtake', driverId: attacker.driverId, message: `${attackerDriver.shortName} overtakes ${defenderDriver.shortName}!` })
+        next.events.push({
+          lap: next.currentLap,
+          type: 'overtake',
+          driverId: attacker.driverId,
+          message: `${attackerDriver.shortName} overtakes ${defenderDriver.shortName}!`,
+        })
       }
     }
   }
 
   // Update positions
-  const allSorted = [...next.cars].filter(c => !c.dnf).sort((a, b) => a.cumulativeTime - b.cumulativeTime)
-  allSorted.forEach((car, i) => { car.position = i + 1 })
-  next.cars.filter(c => c.dnf).forEach(car => { car.position = 99 })
+  const allSorted = [...next.cars]
+    .filter((c) => !c.dnf)
+    .sort((a, b) => a.cumulativeTime - b.cumulativeTime)
+  allSorted.forEach((car, i) => {
+    car.position = i + 1
+  })
+  next.cars
+    .filter((c) => c.dnf)
+    .forEach((car) => {
+      car.position = 99
+    })
 
   return next
 }

@@ -19,19 +19,29 @@ export const useRaceStore = create<RaceStoreState>((set) => ({
 
   setRaceState: (raceState) => set({ raceState }),
   setRunning: (isRunning) => set({ isRunning }),
-  setPlayerMode: (mode) => set((s) => {
-    if (!s.raceState) return s
-    const next = { ...s.raceState, cars: s.raceState.cars.map(c =>
-      c.driverId === s.raceState!.playerDriverId ? { ...c, mode } : c
-    )}
-    return { raceState: next }
-  }),
-  callPitStop: (compound) => set((s) => {
-    if (!s.raceState) return s
-    const next = { ...s.raceState, cars: s.raceState.cars.map(c =>
-      c.driverId === s.raceState!.playerDriverId ? { ...c, pitting: true, tireCompound: compound } : c
-    )}
-    return { raceState: next }
-  }),
+  setPlayerMode: (mode) =>
+    set((s) => {
+      if (!s.raceState) return s
+      const next = {
+        ...s.raceState,
+        cars: s.raceState.cars.map((c) =>
+          c.driverId === s.raceState!.playerDriverId ? { ...c, mode } : c,
+        ),
+      }
+      return { raceState: next }
+    }),
+  callPitStop: (compound) =>
+    set((s) => {
+      if (!s.raceState) return s
+      const next = {
+        ...s.raceState,
+        cars: s.raceState.cars.map((c) =>
+          c.driverId === s.raceState!.playerDriverId
+            ? { ...c, pitting: true, tireCompound: compound }
+            : c,
+        ),
+      }
+      return { raceState: next }
+    }),
   reset: () => set({ raceState: null, isRunning: false }),
 }))

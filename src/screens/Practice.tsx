@@ -79,24 +79,16 @@ export function Practice() {
     <div className="min-h-screen bg-f1-bg px-4 py-8 flex flex-col items-center">
       {/* Header */}
       <div className="text-center mb-6">
-        <h1 className="font-pixel text-xl text-f1-accent mb-1">
-          PRACTICE SESSION
-        </h1>
-        <p className="font-pixel text-[10px] text-f1-text/60 mb-2">
-          {track.name}
-        </p>
+        <h1 className="font-pixel text-xl text-f1-accent mb-1">PRACTICE SESSION</h1>
+        <p className="font-pixel text-[10px] text-f1-text/60 mb-2">{track.name}</p>
         <WeatherBadge weather={weather} />
       </div>
 
       {/* Progress Section */}
       <div className="w-full max-w-xl mb-8">
         <div className="flex items-center justify-between mb-2">
-          <span className="font-pixel text-[10px] text-f1-text/70">
-            DATA COLLECTED
-          </span>
-          <span className="font-pixel text-[10px] text-f1-accent">
-            {Math.round(progress)}%
-          </span>
+          <span className="font-pixel text-[10px] text-f1-text/70">DATA COLLECTED</span>
+          <span className="font-pixel text-[10px] text-f1-accent">{Math.round(progress)}%</span>
         </div>
         <div className="w-full h-4 bg-slate-800 border border-f1-border rounded-sm overflow-hidden">
           <motion.div
@@ -187,12 +179,8 @@ function TireCard({
             <span className="font-pixel text-[10px] text-f1-text">
               {degradationRate.toFixed(3)}/lap
             </span>
-            <span className="font-pixel text-[8px] text-f1-text/50 mt-1">
-              OPT LIFE
-            </span>
-            <span className="font-pixel text-[10px] text-f1-text">
-              {optimalLife} laps
-            </span>
+            <span className="font-pixel text-[8px] text-f1-text/50 mt-1">OPT LIFE</span>
+            <span className="font-pixel text-[10px] text-f1-text">{optimalLife} laps</span>
           </div>
         </motion.div>
       )}

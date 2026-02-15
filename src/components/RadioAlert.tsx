@@ -20,12 +20,8 @@ export function RadioAlert({ message, onDismiss }: RadioAlertProps) {
       transition={{ type: 'spring', damping: 20, stiffness: 300 }}
       className="fixed bottom-4 right-4 max-w-sm bg-slate-900 border-2 border-f1-border p-4 font-pixel z-50"
     >
-      <div className="text-f1-accent text-[10px] mb-2">
-        {'\uD83D\uDCFB'} RADIO
-      </div>
-      <div className="text-f1-text text-[10px] leading-relaxed">
-        {message}
-      </div>
+      <div className="text-f1-accent text-[10px] mb-2">{'\uD83D\uDCFB'} RADIO</div>
+      <div className="text-f1-text text-[10px] leading-relaxed">{message}</div>
     </motion.div>
   )
 }

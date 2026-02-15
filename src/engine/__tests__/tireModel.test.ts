@@ -33,7 +33,7 @@ describe('getWeatherGripMultiplier', () => {
     expect(getWeatherGripMultiplier('soft', 'dry')).toBe(1.0)
   })
   it('slicks in heavy rain = 1.60', () => {
-    expect(getWeatherGripMultiplier('medium', 'heavy-rain')).toBe(1.60)
+    expect(getWeatherGripMultiplier('medium', 'heavy-rain')).toBe(1.6)
   })
   it('wets in heavy rain = 1.0', () => {
     expect(getWeatherGripMultiplier('wet', 'heavy-rain')).toBe(1.0)
