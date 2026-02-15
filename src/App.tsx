@@ -6,6 +6,7 @@ import { Practice } from './screens/Practice'
 import { Qualifying } from './screens/Qualifying'
 import { StrategyRoom } from './screens/StrategyRoom'
 import { Race } from './screens/Race'
+import { SeasonEnd } from './screens/SeasonEnd'
 
 function App() {
   const phase = useWeekendStore((s) => s.phase)
@@ -39,11 +40,7 @@ function App() {
       case 'results':
         return <Race />
       case 'season-end':
-        return (
-          <div className="min-h-screen bg-f1-bg flex items-center justify-center">
-            <p className="font-pixel text-f1-accent">SEASON END COMING SOON</p>
-          </div>
-        )
+        return <SeasonEnd />
       default:
         return <TeamSelect />
     }
