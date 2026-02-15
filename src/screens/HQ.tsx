@@ -200,7 +200,7 @@ function RDTab() {
                   <PixelButton
                     onClick={() => purchaseBase(area)}
                     disabled={!canAffordBase}
-                    className="!px-2 !py-1 !text-[9px]"
+                    className="px-2! py-1! text-[9px]!"
                   >
                     RESEARCH
                   </PixelButton>
@@ -246,7 +246,7 @@ function RDTab() {
                         <PixelButton
                           onClick={() => purchaseBranch(area, branch)}
                           disabled={!canAfford}
-                          className="!px-2 !py-1 !text-[9px]"
+                          className="px-2! py-1! text-[9px]!"
                         >
                           RESEARCH
                         </PixelButton>
@@ -323,7 +323,7 @@ function ComponentsTab() {
                 variant="warning"
                 onClick={() => replaceComponent(comp.type)}
                 disabled={!canAfford}
-                className="!px-2 !py-1 !text-[9px]"
+                className="px-2! py-1! text-[9px]!"
               >
                 REPLACE — {formatMoney(cost)}
               </PixelButton>
@@ -386,7 +386,7 @@ function SponsorsTab() {
               <PixelButton
                 variant="danger"
                 onClick={() => dropSponsor(sponsor.id)}
-                className="!px-2 !py-1 !text-[9px]"
+                className="px-2! py-1! text-[9px]!"
               >
                 DROP
               </PixelButton>
@@ -424,7 +424,7 @@ function SponsorsTab() {
               <PixelButton
                 onClick={() => signSponsor(sponsor.id)}
                 disabled={atMax}
-                className="!px-2 !py-1 !text-[9px]"
+                className="px-2! py-1! text-[9px]!"
               >
                 SIGN
               </PixelButton>

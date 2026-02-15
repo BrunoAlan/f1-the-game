@@ -4,6 +4,8 @@
 
 Browser-based F1 race management/strategy game with pixel-retro aesthetic. React 19 + TypeScript + Vite.
 
+**Current Status:** Full season mode with HQ management, R&D progression, sponsor system, component wear, and complete race weekend flow including sprint weekends.
+
 ## Tech Stack
 
 - **Framework:** React 19 + TypeScript + Vite 7
@@ -20,13 +22,13 @@ Component-Per-Phase architecture. Each race weekend phase is a distinct screen. 
 
 ## Key Directories
 
-- `src/data/` — Static data: teams, drivers, tracks, tires
+- `src/data/` — Static data: teams, drivers, tracks, tires, calendar, sponsors, R&D trees
 - `src/engine/` — Simulation logic (pure TS, no React imports)
-- `src/stores/` — Zustand stores (weekendStore, raceStore, strategyStore)
-- `src/screens/` — Phase screens (TeamSelect, Practice, Qualifying, StrategyRoom, Race)
-- `src/components/` — Reusable UI components
+- `src/stores/` — Zustand stores (seasonStore, weekendStore, raceStore, strategyStore)
+- `src/screens/` — Phase screens (TeamSelect, HQ, Practice, Qualifying, SprintShootout, SprintRace, StrategyRoom, Race, SeasonEnd)
+- `src/components/` — Reusable UI components (PixelButton, etc.)
 - `src/hooks/` — Custom hooks (useRaceLoop, useRadioMessages)
-- `src/utils/` — Helpers (random, formatTime)
+- `src/utils/` — Helpers (random, formatTime, formatMoney)
 
 ## Commands
 
@@ -41,7 +43,8 @@ Component-Per-Phase architecture. Each race weekend phase is a distinct screen. 
 - Team colors follow real 2026 F1 team colors
 - Real 2026 driver/team names
 - UI follows Pixel-Tech aesthetic: monospace font, dark theme, neon accents
-- State management per phase via Zustand, with weekendStore as orchestrator
+- State management: seasonStore orchestrates full season (budget, R&D, standings), weekendStore manages race weekend flow, raceStore/strategyStore handle specific phases
+- Tailwind class format: use `class-name!` for important modifiers (not `!class-name`)
 
 ## Design Doc
 
