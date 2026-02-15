@@ -1,9 +1,13 @@
+import { useWeekendStore } from './stores/weekendStore'
+import { TeamSelect } from './screens/TeamSelect'
+
 function App() {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <h1 className="text-f1-accent text-lg">F1 THE GAME</h1>
-    </div>
-  )
+  const phase = useWeekendStore((s) => s.phase)
+
+  switch (phase) {
+    case 'team-select': return <TeamSelect />
+    default: return <TeamSelect />
+  }
 }
 
 export default App
